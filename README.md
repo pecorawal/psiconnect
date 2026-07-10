@@ -13,4 +13,16 @@ Plataforma de conexão entre psicólogos e pacientes. Este projeto visa criar um
 *Em breve — stack tecnológica será definida durante o desenvolvimento.*
 
 ## Sugestões de melhorias
-Esse é um repositório de código aberto e pode ser reaproveitado e melhorado, para contribuir com qualquer melhoria faça um fork desse repositório e utilize como julgar melhor, devolutivas de melhoria é só pedir um pull-request que eu avalio e faço o merge se fizer sentido. Forte abraço.
+<!-- readme-tree start -->
+```
+.
+├── .github
+│   └── workflows
+│       ├── auto-pr-dev.yaml
+│       └── readme-tree.yaml
+├── README.md
+└── tree.bak
+
+3 directories, 4 files
+```
+<!-- readme-tree end -->
