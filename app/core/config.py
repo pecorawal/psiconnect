@@ -123,6 +123,16 @@ class Settings(BaseSettings):
         return self.app_env is Ambiente.PRODUCAO
 
     @property
+    def permite_rotas_dev(self) -> bool:
+        """Se as rotas ``/dev`` devem existir.
+
+        Dev e teste sim; **staging e produção nunca** -- são atalhos que pulam
+        pagamento e aprovação de cadastro, e não podem ser alcançáveis onde há
+        gente real.
+        """
+        return self.app_env in (Ambiente.DEV, Ambiente.TESTE)
+
+    @property
     def cookies_seguros(self) -> bool:
         """Se os cookies devem levar a flag ``Secure``.
 

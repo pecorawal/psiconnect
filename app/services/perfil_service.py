@@ -24,6 +24,7 @@ from app.models import (
     Conselho,
     Especialidade,
     PerfilProfissional,
+    StatusCadastro,
     Usuario,
 )
 from app.models.perfil import ProfissionalEspecialidade
@@ -99,7 +100,12 @@ class PerfilProfissionalService:
         if not numero:
             raise RegistroInvalido(campo="registro_numero")
 
-        perfil = usuario.perfil_profissional
+        # O profissional fez a parte dele; agora a plataforma precisa conferir o
+        # registro no cadastro público do conselho. Enquanto isso ele NÃO aparece
+        # para pacientes -- expor alguém com registro não verificado numa
+        # plataforma de saúde não é aceitável.
+        # A aprovação é manual na Fase 1 (painel admin chega na Fase 6).
+        perfil = await self.sessao.get(PerfilProfissional, usuario.id)
         if perfil is None:
             perfil = PerfilProfissional(
                 usuario_id=usuario.id,
@@ -108,6 +114,7 @@ class PerfilProfissionalService:
                 registro_numero=numero,
                 registro_uf=uf,
                 descricao=descricao,
+                status_cadastro=StatusCadastro.EM_ANALISE,
             )
             self.sessao.add(perfil)
         else:
@@ -116,6 +123,16 @@ class PerfilProfissionalService:
             perfil.registro_numero = numero
             perfil.registro_uf = uf
             perfil.descricao = descricao
+            # Mexer no registro invalida a verificação anterior: quem já estava
+            # aprovado volta para análise.
+            if perfil.status_cadastro in (
+                StatusCadastro.RASCUNHO,
+                StatusCadastro.APROVADO,
+            ) and (
+                perfil.registro_verificado_em is None
+                or perfil.status_cadastro is StatusCadastro.RASCUNHO
+            ):
+                perfil.status_cadastro = StatusCadastro.EM_ANALISE
 
         try:
             await self.sessao.flush()

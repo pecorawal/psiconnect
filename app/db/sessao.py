@@ -79,6 +79,10 @@ async def get_db() -> AsyncIterator[AsyncSession]:
             raise
 
 
+#: Marca, na própria sessão, que já existe um UnitOfWork ativo.
+_ATRIBUTO_ANINHAMENTO = "_psiconnect_uow_profundidade"
+
+
 class UnitOfWork:
     """Escopo transacional explícito para um caso de uso.
 
@@ -89,18 +93,24 @@ class UnitOfWork:
             await repo_credito.consumir(credito_id)
         # commit aqui; qualquer exceção dentro do bloco faz rollback
 
-    Reentrante: se a sessão já estiver numa transação (o caso normal dentro de
-    uma requisição), participa dela em vez de abrir outra.
+    O aninhamento é rastreado por um contador na sessão -- **não** por
+    ``sessao.in_transaction()``. A diferença importa: o SQLAlchemy abre a
+    transação sozinho na primeira consulta, e numa requisição web isso já
+    aconteceu antes de o caso de uso começar (a dependência que carrega o
+    usuário logado faz um SELECT). Decidir "sou o dono?" olhando
+    ``in_transaction()`` responderia *não* sempre, e o commit nunca aconteceria:
+    a sessão fecharia no fim da requisição com rollback, descartando tudo em
+    silêncio.
     """
 
     def __init__(self, sessao: AsyncSession) -> None:
         self.sessao = sessao
-        self._proprietario = False
+        self._externo = False
 
     async def __aenter__(self) -> UnitOfWork:
-        if not self.sessao.in_transaction():
-            await self.sessao.begin()
-            self._proprietario = True
+        profundidade = getattr(self.sessao, _ATRIBUTO_ANINHAMENTO, 0)
+        self._externo = profundidade == 0
+        setattr(self.sessao, _ATRIBUTO_ANINHAMENTO, profundidade + 1)
         return self
 
     async def __aexit__(
@@ -109,10 +119,18 @@ class UnitOfWork:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
+        profundidade = getattr(self.sessao, _ATRIBUTO_ANINHAMENTO, 1)
+        setattr(self.sessao, _ATRIBUTO_ANINHAMENTO, max(0, profundidade - 1))
+
         if exc_type is not None:
+            # Rollback vale para a transação inteira, não só para o bloco
+            # interno: um caso de uso parcialmente aplicado é pior que nenhum.
             await self.sessao.rollback()
             return
-        if self._proprietario:
+
+        if self._externo:
             await self.sessao.commit()
         else:
+            # Aninhado: deixa o bloco externo decidir, mas garante que o SQL já
+            # foi emitido (para que constraints falhem aqui, e não no commit).
             await self.sessao.flush()

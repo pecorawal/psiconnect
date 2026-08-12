@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import botao %}
+{% block titulo %}Como você está se sentindo?{% endblock %}
+
+{% set rotulos = {
+  "humor": "Humor",
+  "ansiedade": "Ansiedade e preocupação",
+  "corpo": "Sono e corpo",
+  "rotina": "Trabalho e rotina",
+  "relacoes": "Relações",
+  "eventos": "Acontecimentos",
+  "substancias": "Álcool e outras substâncias",
+  "autoimagem": "Como você se vê",
+  "risco": "Pensamentos difíceis",
+} %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-3xl px-4 py-12">
+  <h1 class="text-2xl font-bold text-slate-900">Como você está se sentindo?</h1>
+  <p class="mt-2 text-slate-600">
+    Marque o que mais te incomoda. Não precisa nomear nada com termo técnico —
+    usamos isso só para sugerir profissionais com experiência no assunto.
+  </p>
+  <p class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+    Isso é informação de saúde e fica <strong>protegida</strong>: só você e o profissional
+    que atender você têm acesso. Você pode apagar a qualquer momento em “Meus dados”.
+  </p>
+
+  <form method="post" action="{{ url_for('sintomas') }}" class="mt-8">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {% for categoria, lista in por_categoria.items() %}
+    <fieldset class="mb-8">
+      <legend class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        {{ rotulos.get(categoria, categoria) }}
+      </legend>
+      <div class="space-y-3">
+        {% for s in lista %}
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition
+                      hover:border-teal-400 has-[:checked]:border-teal-600
+                      has-[:checked]:bg-teal-50/40
+                      {% if s.bandeira_risco %}border-rose-200 bg-rose-50/40
+                      {% else %}border-slate-200 bg-white{% endif %}">
+          <input type="checkbox" name="sintoma_id" value="{{ s.id }}" data-sintoma
+                 {% if s.id in atuais %}checked{% endif %}
+                 class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700
+                        focus:ring-2 focus:ring-teal-600/30">
+          <span class="flex-1">
+            <span class="block font-medium text-slate-900">{{ s.descricao_leiga }}</span>
+            <span class="mt-2 flex items-center gap-2 text-xs text-slate-500">
+              <span>Quanto incomoda?</span>
+              <select name="intensidade_{{ s.id }}"
+                      class="rounded-lg border border-slate-300 px-2 py-1 text-xs">
+                {% for n in [1, 2, 3, 4, 5] %}
+                <option value="{{ n }}" {% if atuais.get(s.id, 3) == n %}selected{% endif %}>
+                  {{ ["um pouco", "às vezes", "bastante", "muito", "o tempo todo"][n - 1] }}
+                </option>
+                {% endfor %}
+              </select>
+            </span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <div class="sticky bottom-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+      <div class="flex items-center justify-between gap-4">
+        <p class="text-sm text-slate-600">
+          <span id="contagem" class="font-medium text-slate-900">0</span> selecionados
+        </p>
+        {{ botao("Ver profissionais") }}
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var caixas = document.querySelectorAll("[data-sintoma]");
+    var contador = document.getElementById("contagem");
+    function atualizar() {
+      contador.textContent = document.querySelectorAll("[data-sintoma]:checked").length;
+    }
+    caixas.forEach(function (c) { c.addEventListener("change", atualizar); });
+    atualizar();
+  })();
+</script>
+{% endblock %}

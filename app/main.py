@@ -25,7 +25,8 @@ from app.core.sessao_web import COOKIE_CSRF, DURACAO_SESSAO, csrf_valido
 from app.core.templating import criar_templates, eh_htmx
 from app.db.sessao import fechar_engine, init_engine
 from app.providers.registry import montar_providers
-from app.web.rotas import auth, profissional, publico
+from app.web.rotas import auth, dev, paciente, painel, profissional, publico
+from app.web.rotas import sessao as rotas_sessao
 
 log = get_logger(__name__)
 
@@ -221,6 +222,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(publico.montar(templates))
     app.include_router(auth.montar(templates))
     app.include_router(profissional.montar(templates))
+    app.include_router(paciente.montar(templates))
+    app.include_router(painel.montar(templates))
+    app.include_router(rotas_sessao.montar(templates))
+
+    # Rotas de dev nem sequer existem fora de dev/teste: são atalhos que
+    # substituem worker, webhook e aprovação de cadastro.
+    if settings.permite_rotas_dev:
+        app.include_router(dev.montar(templates))
 
     return app
 

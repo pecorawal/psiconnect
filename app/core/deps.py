@@ -85,10 +85,17 @@ def requer_papel(*papeis: Papel):  # type: ignore[no-untyped-def]
 
 async def obter_perfil_profissional(
     usuario: Annotated[Usuario, Depends(requer_papel(Papel.PROFISSIONAL))],
+    sessao: DbSession,
 ) -> PerfilProfissional:
-    if usuario.perfil_profissional is None:
+    # Consulta explícita em vez de `usuario.perfil_profissional`: o
+    # relacionamento é carregado junto com o usuário e fica em cache no identity
+    # map. Se o perfil foi criado depois disso na MESMA sessão, o atributo ainda
+    # vale None -- e o profissional recém-cadastrado levaria 403 no próprio
+    # passo seguinte do onboarding.
+    perfil = await sessao.get(PerfilProfissional, usuario.id)
+    if perfil is None:
         raise NaoAutorizado("Complete seu cadastro profissional para continuar.")
-    return usuario.perfil_profissional
+    return perfil
 
 
 ProfissionalAtual = Annotated[PerfilProfissional, Depends(obter_perfil_profissional)]
@@ -96,10 +103,12 @@ ProfissionalAtual = Annotated[PerfilProfissional, Depends(obter_perfil_profissio
 
 async def obter_perfil_paciente(
     usuario: Annotated[Usuario, Depends(requer_papel(Papel.PACIENTE))],
+    sessao: DbSession,
 ) -> PerfilPaciente:
-    if usuario.perfil_paciente is None:
+    perfil = await sessao.get(PerfilPaciente, usuario.id)
+    if perfil is None:
         raise NaoAutorizado("Complete seu cadastro para continuar.")
-    return usuario.perfil_paciente
+    return perfil
 
 
 PacienteAtual = Annotated[PerfilPaciente, Depends(obter_perfil_paciente)]

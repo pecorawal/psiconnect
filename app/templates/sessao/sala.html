@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block titulo %}Sessão em andamento{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-4xl px-4 py-8">
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-semibold text-slate-900">
+        {% if eh_profissional %}
+          Sessão com {{ sessao.agendamento.paciente.usuario.primeiro_nome }}
+        {% else %}
+          Sessão com {{ sessao.agendamento.profissional.nome_exibicao }}
+        {% endif %}
+      </h1>
+      <p class="text-sm text-slate-500">
+        {{ sessao.agendamento.inicio_utc | hora_br }}
+        · {{ sessao.agendamento.duracao_min }} minutos
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      {% if sessao.transcricao_consentida %}
+      <span class="flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs
+                   text-teal-800">
+        <span class="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden="true"></span>
+        Transcrição ativa
+      </span>
+      {% endif %}
+      <form method="post" action="/sessao/{{ sessao.agendamento_id }}/encerrar">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit"
+                class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white
+                       hover:bg-rose-700">
+          Encerrar sessão
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if aguardando_paciente %}
+  <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border
+              border-amber-200 bg-amber-50 px-5 py-4">
+    <p class="text-sm text-amber-900">
+      O paciente está na sala de espera aguardando você admiti-lo.
+    </p>
+    <form method="post" action="/sessao/{{ sessao.agendamento_id }}/admitir">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit"
+              class="rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white
+                     hover:bg-teal-800">
+        Admitir paciente
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  {# O provedor de vídeo entra aqui. Com VIDEO_PROVIDER=fake, sala_url aponta
+     para a sala simulada da própria aplicação; com daily.co (Fase 4), para a
+     sala real. O resto da página não muda. #}
+  <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+    <iframe src="{{ sessao.sala_url }}?token={{ token }}"
+            title="Sala de vídeo"
+            allow="camera; microphone; fullscreen; display-capture; autoplay"
+            class="aspect-video w-full"></iframe>
+  </div>
+
+  <p class="mt-4 text-xs text-slate-500">
+    Esta chamada é criptografada. O áudio e o vídeo não são gravados —
+    apenas a transcrição em texto é guardada, de forma cifrada.
+  </p>
+</section>
+{% endblock %}
