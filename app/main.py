@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -24,9 +25,28 @@ from app.core.sessao_web import COOKIE_CSRF, DURACAO_SESSAO, csrf_valido
 from app.core.templating import criar_templates, eh_htmx
 from app.db.sessao import fechar_engine, init_engine
 from app.providers.registry import montar_providers
-from app.web.rotas import auth, publico
+from app.web.rotas import auth, profissional, publico
 
 log = get_logger(__name__)
+
+#: Nome técnico do campo -> rótulo que o usuário reconhece do formulário.
+ROTULOS_CAMPOS = {
+    "email": "e-mail",
+    "senha": "senha",
+    "nome_completo": "nome completo",
+    "nome_exibicao": "nome de exibição",
+    "data_nascimento": "data de nascimento",
+    "registro_numero": "número do registro",
+    "registro_uf": "UF do registro",
+    "descricao": "descrição",
+    "dia_semana": "dia da semana",
+    "inicio": "horário inicial",
+    "fim": "horário final",
+}
+
+
+def _rotular(campo: str) -> str:
+    return ROTULOS_CAMPOS.get(campo, campo.replace("_", " "))
 
 
 @asynccontextmanager
@@ -170,6 +190,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             status_code=exc.status_http,
         )
 
+    @app.exception_handler(RequestValidationError)
+    async def tratar_erro_validacao(request: Request, exc: RequestValidationError) -> Response:
+        """Erro de validação de formulário vira mensagem em português.
+
+        Sem isto o FastAPI devolve o JSON cru do Pydantic
+        (``{"detail":[{"type":"missing","loc":["body","email"], ...}]}``) --
+        que numa navegação normal aparece como texto na tela.
+        """
+        campos = [
+            str(erro["loc"][-1])
+            for erro in exc.errors()
+            if erro.get("loc") and erro["loc"][0] in ("body", "query", "form")
+        ]
+        mensagem = (
+            f"Preencha corretamente: {', '.join(_rotular(c) for c in campos)}."
+            if campos
+            else "Alguns campos não foram preenchidos corretamente."
+        )
+        erro = ErroDominio(mensagem, campo=campos[0] if campos else None)
+        return await tratar_erro_dominio(request, erro)
+
     # --- Estáticos e rotas -------------------------------------------------
     app.mount(
         "/static",
@@ -179,6 +220,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(saude.router)
     app.include_router(publico.montar(templates))
     app.include_router(auth.montar(templates))
+    app.include_router(profissional.montar(templates))
 
     return app
 

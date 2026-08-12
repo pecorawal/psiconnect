@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import botao %}
+{% from "componentes/passos.html" import passos %}
+{% block titulo %}Sua agenda{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-4xl px-4 py-12">
+  {{ passos("agenda") }}
+
+  <h1 class="text-2xl font-bold text-slate-900">Sua agenda semanal</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Informe os dias e horários em que você fica disponível. Isso é uma
+    <strong>regra que se repete toda semana</strong> — não são consultas marcadas.
+    Alterá-la depois não mexe em nada que já esteja agendado.
+  </p>
+
+  <form class="mt-8 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200
+               bg-white p-4"
+        hx-post="{{ url_for('agenda_profissional') }}"
+        hx-target="#grade"
+        hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="space-y-1.5">
+      <label for="dia_semana" class="block text-sm font-medium text-slate-700">Dia</label>
+      <select id="dia_semana" name="dia_semana"
+              class="rounded-xl border border-slate-300 bg-white px-4 py-2.5
+                     focus:border-teal-600 focus:outline-none">
+        {% for nome in dias_semana %}
+        <option value="{{ loop.index0 }}">{{ nome | capitalize }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="space-y-1.5">
+      <label for="inicio" class="block text-sm font-medium text-slate-700">Das</label>
+      <input type="time" id="inicio" name="inicio" value="09:00" required step="900"
+             class="rounded-xl border border-slate-300 px-4 py-2.5 focus:border-teal-600
+                    focus:outline-none">
+    </div>
+
+    <div class="space-y-1.5">
+      <label for="fim" class="block text-sm font-medium text-slate-700">Às</label>
+      <input type="time" id="fim" name="fim" value="12:00" required step="900"
+             class="rounded-xl border border-slate-300 px-4 py-2.5 focus:border-teal-600
+                    focus:outline-none">
+    </div>
+
+    {{ botao("Adicionar") }}
+  </form>
+
+  {% include "partials/grade_agenda.html" %}
+
+  <div class="mt-8 flex flex-wrap items-center gap-4 text-sm">
+    <a href="/painel" class="rounded-xl bg-teal-700 px-5 py-2.5 font-medium text-white
+                             hover:bg-teal-800">
+      Concluir cadastro
+    </a>
+    <a href="{{ url_for('simulador') }}" class="text-teal-700 hover:underline">
+      Simulador de recebimento
+    </a>
+  </div>
+</section>
+{% endblock %}

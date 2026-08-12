@@ -1,0 +1,49 @@
+{% set rotulos = {
+  "PIX": "Pix",
+  "CARTAO_DEBITO": "Cartão de débito",
+  "CARTAO_CREDITO": "Cartão de crédito",
+} %}
+<div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+  <table class="w-full min-w-[34rem] text-sm">
+    <caption class="sr-only">Simulação de recebimento por forma de pagamento</caption>
+    <thead class="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
+      <tr>
+        <th scope="col" class="px-4 py-3 font-medium">Forma</th>
+        <th scope="col" class="px-4 py-3 text-right font-medium">Taxa</th>
+        <th scope="col" class="px-4 py-3 text-right font-medium">Plataforma</th>
+        <th scope="col" class="px-4 py-3 text-right font-medium">Você recebe</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for metodo in metodos %}
+      {% set r = simulacao[metodo] %}
+      <tr>
+        <th scope="row" class="px-4 py-3 text-left font-normal text-slate-800">
+          {{ rotulos.get(metodo.value, metodo.value) }}
+        </th>
+        <td class="px-4 py-3 text-right text-slate-600">
+          −{{ r.taxa_provedor_centavos | brl }}
+          <span class="block text-xs text-slate-400">{{ r.percentual_taxa }}%</span>
+        </td>
+        <td class="px-4 py-3 text-right text-slate-600">
+          −{{ r.comissao_plataforma_centavos | brl }}
+          <span class="block text-xs text-slate-400">{{ r.percentual_comissao }}%</span>
+        </td>
+        <td class="px-4 py-3 text-right font-semibold text-teal-800">
+          {{ r.liquido_profissional_centavos | brl }}
+          <span class="block text-xs font-normal text-slate-400">
+            −{{ r.percentual_efetivo }}% no total
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot class="border-t border-slate-200 bg-slate-50">
+      <tr>
+        <td colspan="4" class="px-4 py-2.5 text-xs text-slate-500">
+          Sobre uma sessão de <strong>{{ bruto | brl }}</strong>.
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
