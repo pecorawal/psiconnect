@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Cadastro de profissional{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-16">
+  <h1 class="text-2xl font-bold text-slate-900">Cadastre-se como profissional</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Primeiro criamos sua conta. No próximo passo você informa seu registro no conselho,
+    suas especialidades e monta sua agenda.
+  </p>
+
+  <form method="post" action="{{ url_for('cadastro_profissional') }}" class="mt-8 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ campo("nome_completo", "Nome completo", requerido=true, autocomplete="name") }}
+    {{ campo("email", "E-mail profissional", tipo="email", requerido=true, autocomplete="email") }}
+    {{ campo("senha", "Senha", tipo="password", requerido=true, autocomplete="new-password",
+             ajuda="Pelo menos 8 caracteres.") }}
+    {{ campo("telefone", "WhatsApp", tipo="tel", autocomplete="tel",
+             placeholder="(11) 90000-0000") }}
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <label class="flex items-start gap-3 text-sm text-slate-700">
+        <input type="checkbox" name="aceite" value="1" required
+               class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700
+                      focus:ring-2 focus:ring-teal-600/30">
+        <span>
+          Li e aceito os
+          <a href="/termos" target="_blank" class="font-medium text-teal-700 underline">termos de uso</a>,
+          a <a href="/privacidade" target="_blank" class="font-medium text-teal-700 underline">política de privacidade</a>
+          e o
+          <a href="/contrato-profissional" target="_blank" class="font-medium text-teal-700 underline">contrato de prestação de serviços</a>.
+          <span class="mt-1 block text-xs text-slate-500">
+            Declaro que possuo registro ativo no conselho e que avaliei a adequação do
+            atendimento a distância aos casos que atenderei (Res. CFP 9/2024).
+          </span>
+        </span>
+      </label>
+    </div>
+
+    <div class="pt-2">{{ botao("Continuar") }}</div>
+  </form>
+
+  <p class="mt-8 text-center text-sm text-slate-600">
+    Já tem conta?
+    <a href="{{ url_for('entrar') }}" class="font-medium text-teal-700 hover:underline">Entrar</a>
+  </p>
+</section>
+{% endblock %}

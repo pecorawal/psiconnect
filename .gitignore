@@ -1,0 +1,50 @@
+# --- Python ---------------------------------------------------------------
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# --- Ambiente e segredos --- NUNCA commitar ------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+segredos/
+
+# --- Dados locais ---------------------------------------------------------
+media/
+uploads/
+storage_local/
+pgdata
+*.sqlite3
+*.dump
+
+# --- Ferramentas locais ---------------------------------------------------
+tools/
+node_modules/
+tree.bak
+
+# --- IDE / SO -------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+.DS_Store
+
+# --- Explicitamente versionados -------------------------------------------
+# O repositório anterior (efatafy) versionou a venv inteira e colocou a doc de
+# requisitos no .gitignore -- exatamente ao contrario. As regras abaixo existem
+# para que isso nao se repita.
+!docs/**
+# Build do Tailwind e commitado de proposito: producao nao instala Node.
+!app/static/css/app.css

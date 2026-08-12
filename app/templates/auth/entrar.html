@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Entrar{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-16">
+  <h1 class="text-2xl font-bold text-slate-900">Entrar</h1>
+  <p class="mt-2 text-sm text-slate-600">Que bom ter você de volta.</p>
+
+  {% if expirou %}
+  <div role="status" class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Sua sessão expirou por segurança. Entre novamente para continuar.
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('entrar') }}" class="mt-8 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {{ campo("email", "E-mail", tipo="email", requerido=true, autocomplete="username") }}
+    {{ campo("senha", "Senha", tipo="password", requerido=true, autocomplete="current-password") }}
+    <div class="pt-2">{{ botao("Entrar") }}</div>
+  </form>
+
+  <p class="mt-8 text-center text-sm text-slate-600">
+    Ainda não tem conta?
+    <a href="{{ url_for('cadastro_paciente') }}" class="font-medium text-teal-700 hover:underline">
+      Criar conta
+    </a>
+    <span class="text-slate-400">·</span>
+    <a href="{{ url_for('cadastro_profissional') }}" class="font-medium text-teal-700 hover:underline">
+      Sou psicólogo
+    </a>
+  </p>
+</section>
+{% endblock %}
