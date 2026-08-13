@@ -22,6 +22,9 @@
 | [0005](adr/0005-comissao-parametrizavel.md) | Comissão parametrizável, default 12% |
 | [0006](adr/0006-disponibilidade-vs-agendamento.md) | Disponibilidade (regra) ≠ Agendamento (fato) |
 | [0007](adr/0007-pwdlib-argon2.md) | `pwdlib`/Argon2id em vez de `passlib` |
+| [0008](adr/0008-minio-links-temporarios.md) | MinIO com estratégia por sensibilidade do arquivo |
+| [0009](adr/0009-papeis-e-permissoes.md) | Papéis e permissões no esquema do Pectec Nexos |
+| [0010](adr/0010-cadastro-de-menores.md) | Adolescentes com consentimento do responsável |
 
 ## Assets
 

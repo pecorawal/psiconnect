@@ -18,7 +18,9 @@ from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-pytestmark = pytest.mark.web
+from app.core.sessao_web import COOKIE_CSRF
+
+pytestmark = [pytest.mark.web, pytest.mark.db]
 
 RAIZ_TEMPLATES = pathlib.Path(__file__).resolve().parents[2] / "app" / "templates"
 
@@ -70,8 +72,86 @@ class TestHtmlRenderizado:
         assert email is not None and email.has_attr("required")
         assert senha is not None and senha.has_attr("required")
 
+    async def test_pagina_de_erro_renderiza_com_usuario_logado(
+        self, app: FastAPI, sessao, settings
+    ) -> None:
+        """A página de erro roda DEPOIS do rollback da sessão.
+
+        Se o template segurasse o objeto ORM do usuário, ler qualquer atributo
+        dele ali estouraria DetachedInstanceError — e o template de erro
+        quebraria justamente por causa do erro. Por isso o contexto recebe um
+        snapshot imutável (UsuarioContexto), não a entidade.
+        """
+        from tests import fabricas as f
+        from tests.web.test_profissional import logar
+
+        usuario = await f.criar_usuario(
+            sessao, papel=__import__("app.models", fromlist=["Papel"]).Papel.PROFISSIONAL
+        )
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://teste") as c:
+            await logar(c, app, sessao, settings, usuario.id)
+            # UF inválida -> ErroDominio -> rollback -> página de erro
+            r = await c.post(
+                "/profissional/perfil",
+                data={
+                    "nome_exibicao": "Teste",
+                    "conselho": "CRP",
+                    "registro_numero": "111222",
+                    "registro_uf": "ZZ",
+                    "descricao": "x",
+                },
+                headers={"X-CSRF-Token": c.cookies[COOKIE_CSRF]},
+            )
+
+        assert r.status_code == 422
+        assert "UF inválida" in r.text
+        # O cabeçalho renderizou: o snapshot sobreviveu ao rollback.
+        assert "Sair" in r.text
+
     async def test_autocomplete_preservado(self, app: FastAPI) -> None:
         sopa = BeautifulSoup(await self._html(app, "/entrar"), "html.parser")
         email = sopa.select_one("#email")
         assert email is not None
         assert email.get("autocomplete") == "username"
+
+
+class TestCabecalho:
+    """O cabeçalho aparece em toda página, inclusive nas que não precisam do
+    usuário para nada. Se a resolução dependesse de cada rota lembrar de pedir,
+    a home mostraria "Entrar" para quem já está logado."""
+
+    async def _home(self, app: FastAPI, c: AsyncClient) -> str:
+        r = await c.get("/")
+        assert r.status_code == 200
+        return r.text
+
+    async def test_anonimo_ve_entrar(self, app: FastAPI) -> None:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://teste") as c:
+            html = await self._home(app, c)
+        assert ">Entrar<" in html
+        assert "Administração" not in html
+
+    async def test_paciente_ve_painel_e_nao_administracao(
+        self, app: FastAPI, sessao, settings
+    ) -> None:
+        from tests import fabricas as f
+        from tests.web.test_profissional import logar
+
+        paciente = await f.criar_paciente(sessao)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://teste") as c:
+            await logar(c, app, sessao, settings, paciente.usuario_id)
+            html = await self._home(app, c)
+        assert ">Painel<" in html
+        assert "Administração" not in html
+
+    async def test_admin_ve_administracao(self, app: FastAPI, sessao, settings) -> None:
+        from app.models import Papel
+        from tests import fabricas as f
+        from tests.web.test_profissional import logar
+
+        admin = await f.criar_usuario(sessao, papel=Papel.ADMIN)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://teste") as c:
+            await logar(c, app, sessao, settings, admin.id)
+            html = await self._home(app, c)
+        assert "Administração" in html

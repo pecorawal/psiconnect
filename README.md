@@ -31,6 +31,8 @@ especialidades com faixa de preço, e uma agenda semanal de disponibilidade.
 | Senhas | `pwdlib` / Argon2id | `passlib` está quebrado com bcrypt ≥ 4.1 ([ADR 0007](docs/adr/0007-pwdlib-argon2.md)) |
 | Pagamento | Mercado Pago (split) | O dinheiro não transita pela plataforma ([ADR 0004](docs/adr/0004-mercado-pago-split.md)) |
 | Vídeo | daily.co | Atrás de uma porta trocável |
+| Arquivos | MinIO (S3) | Bucket privado; link temporário ou stream cifrado conforme a sensibilidade ([ADR 0008](docs/adr/0008-minio-links-temporarios.md)) |
+| Autorização | `Role` + `RolePermission` | Papéis criados pelo admin, CRUD por módulo ([ADR 0009](docs/adr/0009-papeis-e-permissoes.md)) |
 
 Integrações externas ficam atrás de **portas** (`app/providers/`), com
 implementações *fake* completas — dá para rodar o fluxo inteiro sem nenhuma
@@ -41,8 +43,8 @@ conta em serviço de terceiro.
 Pré-requisitos: Python 3.12, e `podman` ou `docker` com compose.
 
 ```bash
-make bootstrap     # venv + deps + Postgres/pgvector + migrations + seed
-make seed-demo     # psi@demo.br e pac@demo.br, senha: psiconnect123
+make bootstrap     # venv + deps + Postgres/pgvector/MinIO + migrations + seed
+make seed-demo     # psi@ / pac@ / admin@demo.br, senha: psiconnect123
 make dev           # http://localhost:8000
 make worker        # 2º terminal: salas T-20min, outbox, expiração de reservas
 ```
@@ -77,6 +79,11 @@ estruturais decorrem disso:
   repouso ([ADR 0003](docs/adr/0003-sem-gravacao-apenas-transcricao.md)).
 - **Consentimento é registrado com o hash do texto exato** que a pessoa leu, com
   IP e user-agent.
+- **Adolescentes só são atendidos com autorização do responsável legal**
+  (art. 14), verificada por documento — que é apagado depois da conferência
+  ([ADR 0010](docs/adr/0010-cadastro-de-menores.md)).
+- **Documento de identificação** só é visto pelo dono ou por admin com permissão,
+  e todo acesso fica registrado.
 
 O PsiConnect não presta atendimento de emergência. Em crise, o **CVV** atende 24h
 pelo **188**; em emergência, **192** (SAMU).

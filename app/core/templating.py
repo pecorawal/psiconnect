@@ -9,6 +9,8 @@ que a escolha de stack (ADR 0001) quis eliminar.
 
 from __future__ import annotations
 
+import uuid
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -72,6 +74,35 @@ def filtro_data_extenso(dt: datetime | date, tz: str | ZoneInfo | None = None) -
     return f"{DIAS_SEMANA[dt.weekday()]}{sufixo}, {dt.day} de {MESES[dt.month - 1]}"
 
 
+@dataclass(frozen=True, slots=True)
+class UsuarioContexto:
+    """O que os templates precisam saber do usuário logado.
+
+    **Não é o objeto ORM.** Um `Usuario` do SQLAlchemy fica desanexado quando a
+    sessão fecha ou sofre rollback, e aí qualquer atributo lido no template
+    estoura `DetachedInstanceError`. Isso acontecia justamente na página de
+    erro, onde a sessão já rolou de volta -- ou seja, o template de erro
+    quebrava por causa do erro.
+    """
+
+    id: uuid.UUID
+    nome_completo: str
+    email: str
+    papel: str
+
+    @property
+    def primeiro_nome(self) -> str:
+        return self.nome_completo.split()[0] if self.nome_completo else ""
+
+    @property
+    def eh_admin(self) -> bool:
+        return self.papel == "ADMIN"
+
+    @property
+    def eh_profissional(self) -> bool:
+        return self.papel == "PROFISSIONAL"
+
+
 def contexto_padrao(request: Request) -> dict[str, Any]:
     """Injetado em **todo** template renderizado.
 
@@ -79,7 +110,7 @@ def contexto_padrao(request: Request) -> dict[str, Any]:
     -- esquecer o segundo faria o formulário falhar só em produção.
     """
     return {
-        "usuario": getattr(request.state, "usuario", None),
+        "usuario": getattr(request.state, "usuario_ctx", None),
         "csrf_token": getattr(request.state, "csrf_token", ""),
     }
 

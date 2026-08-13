@@ -11,7 +11,13 @@
 
     <nav class="flex items-center gap-1 text-sm" aria-label="Principal">
       {% if usuario is defined and usuario %}
+        {% if usuario.eh_admin %}
+        <a href="/admin/usuarios" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
+          Administração
+        </a>
+        {% else %}
         <a href="/painel" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Painel</a>
+        {% endif %}
         <form method="post" action="/sair" class="contents">
           <button type="submit" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">
             Sair

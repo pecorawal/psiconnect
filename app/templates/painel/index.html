@@ -10,9 +10,14 @@
       Editar minha agenda
     </a>
     {% else %}
-    <a href="{{ url_for('sintomas') }}" class="text-sm text-teal-700 hover:underline">
-      Marcar nova sessão
-    </a>
+    <span class="flex flex-wrap gap-4 text-sm">
+      <a href="{{ url_for('sintomas') }}" class="text-teal-700 hover:underline">
+        Marcar nova sessão
+      </a>
+      <a href="{{ url_for('dependentes') }}" class="text-teal-700 hover:underline">
+        Meus dependentes
+      </a>
+    </span>
     {% endif %}
   </div>
 

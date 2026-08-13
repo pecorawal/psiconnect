@@ -11,13 +11,14 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import saude
 from app.core.config import RAIZ_PROJETO, Settings, get_settings
+from app.core.deps import obter_usuario_opcional
 from app.core.erros import ErroDominio
 from app.core.logging import configurar_logging, get_logger
 from app.core.seguranca import gerar_token_opaco
@@ -232,23 +233,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         name="static",
     )
     app.include_router(saude.router)
-    app.include_router(publico.montar(templates))
-    app.include_router(auth.montar(templates))
-    app.include_router(profissional.montar(templates))
-    app.include_router(paciente.montar(templates))
-    app.include_router(painel.montar(templates))
-    app.include_router(rotas_sessao.montar(templates))
-    app.include_router(avaliacao.montar(templates))
-    app.include_router(responsavel.montar(templates))
-    app.include_router(admin.montar(templates))
+
+    # Resolver o usuário em TODA rota HTML, e não só nas que precisam dele:
+    # o cabeçalho é renderizado em toda página, e sem isto ele mostraria
+    # "Entrar / Começar" para quem já está logado em qualquer tela que não
+    # declarasse a dependência. É barato (as rotas autenticadas já fazem essa
+    # consulta, e o FastAPI reaproveita a dependência dentro da requisição) e
+    # tira do desenvolvedor a chance de esquecer.
+    # /healthz fica de fora de propósito: liveness não toca no banco.
+    contexto_usuario = [Depends(obter_usuario_opcional)]
+
+    app.include_router(publico.montar(templates), dependencies=contexto_usuario)
+    app.include_router(auth.montar(templates), dependencies=contexto_usuario)
+    app.include_router(profissional.montar(templates), dependencies=contexto_usuario)
+    app.include_router(paciente.montar(templates), dependencies=contexto_usuario)
+    app.include_router(painel.montar(templates), dependencies=contexto_usuario)
+    app.include_router(rotas_sessao.montar(templates), dependencies=contexto_usuario)
+    app.include_router(avaliacao.montar(templates), dependencies=contexto_usuario)
+    app.include_router(responsavel.montar(templates), dependencies=contexto_usuario)
+    app.include_router(admin.montar(templates), dependencies=contexto_usuario)
     # /midia por último: tem rota curinga /midia/{token} que capturaria
     # /midia/foto/... se viesse antes das específicas.
-    app.include_router(midia.montar(templates))
+    app.include_router(midia.montar(templates), dependencies=contexto_usuario)
 
     # Rotas de dev nem sequer existem fora de dev/teste: são atalhos que
     # substituem worker, webhook e aprovação de cadastro.
     if settings.permite_rotas_dev:
-        app.include_router(dev.montar(templates))
+        app.include_router(dev.montar(templates), dependencies=contexto_usuario)
 
     return app
 

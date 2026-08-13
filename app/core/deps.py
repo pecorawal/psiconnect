@@ -15,6 +15,7 @@ from app.core.config import Settings, get_settings
 from app.core.erros import NaoAutenticado, NaoAutorizado
 from app.core.permissoes import autorizar, eh_staff
 from app.core.sessao_web import obter_token_sessao
+from app.core.templating import UsuarioContexto
 from app.db.sessao import get_db
 from app.models import Papel, PerfilPaciente, PerfilProfissional, Usuario
 from app.providers.registry import Providers
@@ -56,8 +57,20 @@ async def obter_usuario_opcional(
     if not token:
         return None
     usuario = await AuthService(sessao).resolver_sessao(token)
-    # Guardado no request para os templates e o log não repetirem a consulta.
     request.state.usuario = usuario
+    # Snapshot imutável para os templates: o objeto ORM desanexa quando a sessão
+    # fecha ou faz rollback, e a página de erro (que renderiza DEPOIS do
+    # rollback) estouraria DetachedInstanceError.
+    request.state.usuario_ctx = (
+        UsuarioContexto(
+            id=usuario.id,
+            nome_completo=usuario.nome_completo,
+            email=usuario.email,
+            papel=usuario.papel.value,
+        )
+        if usuario is not None
+        else None
+    )
     return usuario
 
 

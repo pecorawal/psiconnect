@@ -53,8 +53,21 @@ por HTTP, com dois clientes distintos, e confere a trilha de eventos ao final.
 Mercado Pago, WhatsApp/e-mail reais, transcrição, PWA, nota fiscal, painel admin.
 
 **Decisão que ficou:** profissional recém-cadastrado fica `EM_ANALISE` e não
-aparece para pacientes até a verificação do registro no conselho. Isso vale em
-produção; hoje quem aprova é uma rota `/dev`, e na Fase 6 passa a ser o admin.
+aparece para pacientes até a verificação do registro no conselho.
+
+### Entrou depois, fora do escopo original da fase
+
+Três blocos pedidos durante a construção, que anteciparam parte das fases 6 e 7:
+
+- **Papéis e permissões** ([ADR 0009](adr/0009-papeis-e-permissoes.md)) com CRUD
+  administrativo — antecipa boa parte do painel admin da Fase 6.
+- **MinIO** ([ADR 0008](adr/0008-minio-links-temporarios.md)) para foto e
+  documento, com acesso autorizado e trilha.
+- **Cadastro de adolescentes** ([ADR 0010](adr/0010-cadastro-de-menores.md)),
+  que resolve a pendência nº 6 de compliance.
+
+A comissão padrão passou de 5% para **12%**
+([ADR 0005](adr/0005-comissao-parametrizavel.md)).
 
 ---
 
@@ -101,9 +114,12 @@ transcrição" (art. 18).
 
 ## Fase 6 — Nota fiscal, repasses e admin (~2 semanas)
 
-`NotaFiscalProvider` (Focus NFe/eNotas), emissão na aprovação do pagamento,
-conciliação de repasses, painel admin: aprovação de cadastro, verificação de CRP,
-edição de `ParametroSistema` (inclusive a comissão), relatórios, taxonomias.
+`NotaFiscalProvider` (Focus NFe/eNotas), emissão na aprovação do pagamento e
+conciliação de repasses.
+
+O painel admin já saiu junto com a Fase 1: contas, papéis, verificação de
+registro e edição de `ParametroSistema`. Restam relatórios, gestão de taxonomias
+pela interface e a consulta à trilha de auditoria.
 
 ---
 
