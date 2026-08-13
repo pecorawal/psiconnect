@@ -21,6 +21,7 @@ from app.core.config import Settings
 from app.core.sessao_web import COOKIE_CSRF
 from app.models import (
     Agendamento,
+    Avaliacao,
     CreditoSessao,
     EventoPontuacao,
     EventoSessao,
@@ -328,6 +329,57 @@ class TestFluxoCompleto:
             )
             tipos = {p.tipo for p in pontos}
             assert TipoPontuacao.SESSAO_REALIZADA in tipos
+
+            # ------------------------------------------------------------------
+            # 19. R11 — a avaliação pendente bloqueia MARCAR nova sessão
+            # ------------------------------------------------------------------
+            pagina = (await pac.get(f"/paciente/agendar/{prof_id}")).text
+            inicios = re.findall(r'name="inicio" value="([^"]+)"', pagina)
+            esp_ids = re.findall(rf'name="especialidade_id"\s+value="({UUID_RE})"', pagina)
+            r = await pac.post(
+                f"/paciente/agendar/{prof_id}",
+                data={"inicio": inicios[0], "especialidade_id": esp_ids[0]},
+                headers=headers_pac,
+            )
+            assert r.status_code == 422
+            assert "Avalie sua última sessão" in r.text
+
+            # ...mas continua podendo sair e ver os próprios dados. Bloquear
+            # isso prenderia a pessoa no produto e violaria o art. 18 da LGPD.
+            assert (await pac.get("/painel")).status_code == 200
+
+            # 20. Responde as 3 perguntas
+            r = await pac.get(f"/avaliacao/{agendamento_id}")
+            assert r.status_code == 200
+            assert "Como foi usar a plataforma" in r.text
+            assert "Como foi o atendimento do profissional" in r.text
+            assert "seu cuidado" in r.text
+
+            r = await pac.post(
+                f"/avaliacao/{agendamento_id}",
+                data={
+                    "nota_plataforma": "5",
+                    "nota_profissional": "5",
+                    "nota_proprio_cuidado": "4",
+                    "comentario_profissional": "Me senti acolhido.",
+                },
+                headers=headers_pac,
+            )
+            assert r.status_code == 303
+
+            avaliacao = await sessao.scalar(
+                select(Avaliacao).where(Avaliacao.agendamento_id == agendamento.id)
+            )
+            assert avaliacao is not None
+            assert avaliacao.nota_proprio_cuidado == 4
+
+            # 21. Com a avaliação em dia, marcar volta a funcionar
+            r = await pac.post(
+                f"/paciente/agendar/{prof_id}",
+                data={"inicio": inicios[0], "especialidade_id": esp_ids[0]},
+                headers=headers_pac,
+            )
+            assert r.status_code == 303, "avaliação em dia deveria liberar o agendamento"
 
 
 class TestProtecoesDoFluxo:

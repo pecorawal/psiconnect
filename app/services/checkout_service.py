@@ -35,6 +35,7 @@ from app.models import (
 )
 from app.providers.base import CobrancaRequest, PaymentProvider
 from app.services.agendamento_service import AgendamentoService
+from app.services.notificacao_service import NotificacaoService
 from app.services.parametros_service import ParametrosService
 from app.services.regras.precificacao import TabelaTaxas, calcular_reparticao
 
@@ -212,6 +213,12 @@ class CheckoutService:
 
         servico = AgendamentoService(self.sessao, self.parametros)
         await servico.confirmar(agendamento.id)
+
+        # Requisito: avisar por WhatsApp e e-mail que a consulta está marcada.
+        # Vai para a outbox, não sai daqui: um provedor fora do ar não pode
+        # derrubar a confirmação de um pagamento já aprovado.
+        await NotificacaoService(self.sessao).notificar_agendamento_confirmado(agendamento)
+
         log.info(
             "checkout.confirmado",
             compra_id=str(compra.id),

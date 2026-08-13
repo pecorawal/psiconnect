@@ -17,6 +17,7 @@ from app.core.tempo import TZ_BR, para_local
 from app.db.sessao import UnitOfWork
 from app.models import MetodoPagamento, SlugPlano
 from app.services.agendamento_service import AgendamentoService, PedidoReserva
+from app.services.avaliacao_service import AvaliacaoService
 from app.services.checkout_service import CheckoutService
 from app.services.disponibilidade_service import DisponibilidadeService
 from app.services.matching_service import MatchingService
@@ -155,6 +156,10 @@ def montar(templates: Jinja2Templates) -> APIRouter:
         perfil = await MatchingService(sessao).buscar_profissional(profissional_id)
         if perfil is None:
             raise NaoEncontrado("Profissional não encontrado.")
+
+        # R11 — avaliação pendente bloqueia MARCAR nova sessão, e só isso.
+        # Nunca bloqueia sair, pedir suporte ou acessar os próprios dados.
+        await AvaliacaoService(sessao).exigir_avaliacoes_em_dia(paciente.usuario_id)
 
         servico = AgendamentoService(sessao, ParametrosService(sessao, settings))
         async with UnitOfWork(sessao):
