@@ -179,11 +179,12 @@ class PerfilProfissionalService:
         imagem.save(buffer, format="JPEG", quality=85, optimize=True)
 
         caminho = f"perfis/{perfil.usuario_id}/foto.jpg"
-        url = await self.armazenamento.salvar(caminho, buffer.getvalue(), "image/jpeg")
-        perfil.foto_url = url
+        perfil.foto_chave = await self.armazenamento.salvar(
+            caminho, buffer.getvalue(), "image/jpeg"
+        )
         await self.sessao.flush()
         log.info("perfil.foto_salva", profissional_id=str(perfil.usuario_id))
-        return url
+        return caminho
 
     # --- Especialidades -----------------------------------------------------
 

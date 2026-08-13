@@ -22,6 +22,7 @@ from app.services.checkout_service import CheckoutService
 from app.services.disponibilidade_service import DisponibilidadeService
 from app.services.matching_service import MatchingService
 from app.services.parametros_service import ParametrosService
+from app.services.responsavel_service import CadastroPendente
 
 router = APIRouter(prefix="/paciente", tags=["paciente"])
 
@@ -109,6 +110,11 @@ def montar(templates: Jinja2Templates) -> APIRouter:
         settings: Config,
         profissional_id: uuid.UUID,
     ) -> Response:
+        # Bloqueia já aqui, e não só no POST: mostrar horários a quem não pode
+        # marcar é convidar para uma frustração no último clique.
+        if not paciente.pode_agendar:
+            raise CadastroPendente()
+
         matching = MatchingService(sessao)
         perfil = await matching.buscar_profissional(profissional_id)
         if perfil is None:
@@ -156,6 +162,10 @@ def montar(templates: Jinja2Templates) -> APIRouter:
         perfil = await MatchingService(sessao).buscar_profissional(profissional_id)
         if perfil is None:
             raise NaoEncontrado("Profissional não encontrado.")
+
+        # Menor sem autorização do responsável não marca nada (LGPD art. 14).
+        if not paciente.pode_agendar:
+            raise CadastroPendente()
 
         # R11 — avaliação pendente bloqueia MARCAR nova sessão, e só isso.
         # Nunca bloqueia sair, pedir suporte ou acessar os próprios dados.

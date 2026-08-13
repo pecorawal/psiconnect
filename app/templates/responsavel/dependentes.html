@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Meus dependentes{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-2xl px-4 py-12">
+  {% if request.query_params.get("criado") %}
+  <div role="status" class="mb-6 rounded-2xl border border-teal-200 bg-teal-50 px-5 py-4
+                            text-sm text-teal-900">
+    Cadastro criado. Passe os dados de acesso para o adolescente — a conta é dele.
+  </div>
+  {% endif %}
+
+  <h1 class="text-2xl font-bold text-slate-900">Meus dependentes</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Adolescentes sob sua responsabilidade que você autorizou a receber atendimento.
+  </p>
+
+  {% if dependentes %}
+  <ul class="mt-6 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+    {% for d in dependentes %}
+    <li class="flex items-center justify-between gap-4 px-5 py-4">
+      <div>
+        <p class="font-medium text-slate-900">{{ d.usuario.nome_completo }}</p>
+        <p class="text-xs text-slate-500">
+          {{ d.data_nascimento | data_br }}
+          {% if d.responsavel_confirmado_em %}
+          · autorizado em {{ d.responsavel_confirmado_em | data_br }}
+          {% endif %}
+        </p>
+      </div>
+      <span class="rounded-full px-2.5 py-0.5 text-xs
+                   {% if d.status.value == 'ATIVO' %}bg-teal-100 text-teal-800
+                   {% else %}bg-amber-100 text-amber-900{% endif %}">
+        {{ "ativo" if d.status.value == "ATIVO" else "aguardando" }}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2 class="mt-12 text-lg font-semibold text-slate-900">Cadastrar um adolescente</h2>
+  <p class="mt-1 text-sm text-slate-600">
+    A conta é dele: ele entra com o próprio e-mail e senha, e o conteúdo das sessões
+    é protegido por sigilo profissional.
+  </p>
+
+  <form method="post" action="{{ url_for('dependentes') }}" class="mt-6 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ campo("nome_completo", "Nome completo", requerido=true) }}
+    {{ campo("data_nascimento", "Data de nascimento", tipo="date", requerido=true,
+             ajuda="Atendemos a partir de 12 anos.") }}
+    {{ campo("parentesco", "Quem você é para ele(a)?", placeholder="mãe, pai, tutor…") }}
+    {{ campo("email", "E-mail dele(a)", tipo="email", requerido=true,
+             ajuda="Será o login. Use um e-mail que o adolescente acesse.") }}
+    {{ campo("senha", "Senha inicial", tipo="password", requerido=true,
+             ajuda="Pelo menos 8 caracteres. Combine com ele(a) para trocar depois.") }}
+    {{ campo("telefone", "WhatsApp dele(a)", tipo="tel") }}
+
+    <div class="rounded-xl border-2 border-teal-200 bg-teal-50/60 p-4">
+      <label class="flex items-start gap-3 text-sm text-slate-800">
+        <input type="checkbox" name="autorizo" value="1" required
+               class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700
+                      focus:ring-2 focus:ring-teal-600/30">
+        <span>
+          Declaro que sou o <strong>responsável legal</strong> por esta pessoa e
+          <strong>autorizo</strong> o atendimento e o tratamento dos dados de saúde
+          necessários (LGPD, art. 14).
+          <span class="mt-1 block text-xs text-slate-600">
+            Autorizar não dá acesso ao conteúdo das sessões.
+          </span>
+        </span>
+      </label>
+    </div>
+
+    {{ botao("Cadastrar e autorizar") }}
+  </form>
+</section>
+{% endblock %}

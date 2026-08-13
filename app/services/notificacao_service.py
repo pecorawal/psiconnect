@@ -52,14 +52,20 @@ class NotificacaoService:
         contexto: dict[str, Any],
         chave_idempotencia: str,
         agendada_para: datetime | None = None,
+        destino: str | None = None,
     ) -> Notificacao | None:
         """Grava uma notificação a enviar. Devolve ``None`` se já existia.
 
-        O destino sai do próprio usuário: e-mail para EMAIL, telefone para
-        WhatsApp. Sem telefone cadastrado, o canal é simplesmente pulado — não é
-        erro, é ausência de dado.
+        Por padrão o destino sai do próprio usuário: e-mail para EMAIL, telefone
+        para WhatsApp. Sem o dado cadastrado, o canal é pulado — não é erro, é
+        ausência de dado.
+
+        ``destino`` explícito existe para mensagens dirigidas a **terceiros**: o
+        convite ao responsável legal precisa ir para o contato DELE, não para o
+        do adolescente. Sem essa distinção, o menor receberia o próprio convite
+        e poderia se autoautorizar — o que anularia a verificação do art. 14.
         """
-        destino = self._destino(usuario, canal)
+        destino = destino or self._destino(usuario, canal)
         if not destino:
             return None
 

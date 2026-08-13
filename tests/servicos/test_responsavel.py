@@ -98,6 +98,42 @@ class TestCaminhoA:
         assert token  # devolvido em claro, só o hash é persistido
         assert verificacao.token_hash != token
 
+    async def test_convite_vai_para_o_responsavel_e_nao_para_o_menor(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        """O ponto que sustenta toda a verificação do art. 14.
+
+        Se o convite fosse para o e-mail do adolescente, ele abriria o próprio
+        link e se autoautorizaria — e o "consentimento do responsável" seria
+        teatro.
+        """
+        from app.models import Notificacao
+
+        paciente = await f.criar_paciente(sessao, email="adolescente@teste.br")
+        await servico(sessao, settings).abrir_pendencia(
+            paciente,
+            DadosResponsavel(nome="Sandra Mãe", email="sandra.responsavel@teste.br"),
+        )
+
+        convites = list(
+            (
+                await sessao.execute(
+                    select(Notificacao).where(
+                        Notificacao.template == "convite_responsavel",
+                        # Escopado a este paciente: o banco de desenvolvimento
+                        # pode ter convites de outras execuções.
+                        Notificacao.usuario_id == paciente.usuario_id,
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert convites
+        destinos = {n.destino for n in convites}
+        assert destinos == {"sandra.responsavel@teste.br"}
+        assert "adolescente@teste.br" not in destinos
+
     async def test_exige_algum_contato_do_responsavel(
         self, sessao: AsyncSession, settings: Settings
     ) -> None:

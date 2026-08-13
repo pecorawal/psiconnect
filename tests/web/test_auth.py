@@ -87,24 +87,47 @@ class TestCadastroPaciente:
             assert r.headers["location"] == "/paciente/sintomas"
             assert COOKIE_SESSAO in c.cookies
 
-    async def test_menor_de_18_e_bloqueado(self, app: FastAPI) -> None:
-        """Decisão da Fase 1: sem fluxo de consentimento do responsável
-        (LGPD art. 14), é melhor recusar do que tratar dado de menor."""
+    async def test_menor_de_18_vai_para_o_fluxo_do_responsavel(self, app: FastAPI) -> None:
+        """Menor se cadastra, mas a conta nasce pendente (LGPD art. 14)."""
+        from datetime import timedelta
+
+        from app.core.tempo import agora_utc
+
+        quinze_anos = (agora_utc() - timedelta(days=365 * 15 + 10)).date()
         async with cliente(app) as c:
             headers = await _com_csrf(c)
             r = await c.post(
                 "/cadastro/paciente",
                 data={
-                    "nome_completo": "Menor Teste",
-                    "email": "menor@teste.br",
+                    "nome_completo": "Adolescente Teste",
+                    "email": "adolescente@teste.br",
                     "senha": "senha-boa-2026",
-                    "data_nascimento": "2015-01-01",
+                    "data_nascimento": quinze_anos.isoformat(),
+                    "aceite": "1",
+                },
+                headers=headers,
+            )
+        assert r.status_code == 303
+        assert r.headers["location"] == "/cadastro/responsavel"
+
+    async def test_crianca_abaixo_de_12_e_recusada(self, app: FastAPI) -> None:
+        """Psicoterapia infantil exige setting e formação que este produto
+        não contempla."""
+        async with cliente(app) as c:
+            headers = await _com_csrf(c)
+            r = await c.post(
+                "/cadastro/paciente",
+                data={
+                    "nome_completo": "Criança Teste",
+                    "email": "crianca@teste.br",
+                    "senha": "senha-boa-2026",
+                    "data_nascimento": "2019-01-01",
                     "aceite": "1",
                 },
                 headers=headers,
             )
         assert r.status_code == 422
-        assert "18 anos" in r.text
+        assert "12 anos" in r.text
 
     async def test_senha_fraca_e_recusada(self, app: FastAPI) -> None:
         async with cliente(app) as c:

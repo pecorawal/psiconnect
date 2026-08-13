@@ -45,7 +45,9 @@ class PerfilProfissional(Timestamps, Base):
         primary_key=True,
     )
     nome_exibicao: Mapped[str] = mapped_column(String(150), nullable=False)
-    foto_url: Mapped[str | None] = mapped_column(String(500))
+    #: Chave do objeto no storage — **não** uma URL. A URL é gerada na hora do
+    #: acesso, com validade curta, pela rota /midia (ver app/web/rotas/midia.py).
+    foto_chave: Mapped[str | None] = mapped_column(String(500))
 
     # --- Registro no conselho ---------------------------------------------
     conselho: Mapped[Conselho] = mapped_column(
@@ -104,13 +106,18 @@ class PerfilProfissional(Timestamps, Base):
         return f"<PerfilProfissional {self.nome_exibicao} {self.registro_completo}>"
 
     @property
+    def foto_url(self) -> str | None:
+        """URL estável que o template usa. Redireciona para um link assinado."""
+        return f"/midia/foto/{self.usuario_id}" if self.foto_chave else None
+
+    @property
     def registro_completo(self) -> str:
         """``CRP 06/123456`` -- o formato que o profissional reconhece."""
         return f"{self.conselho.value} {self.registro_uf}/{self.registro_numero}"
 
     @property
     def cadastro_completo(self) -> bool:
-        return bool(self.foto_url and self.descricao and self.especialidades)
+        return bool(self.foto_chave and self.descricao and self.especialidades)
 
 
 class ProfissionalEspecialidade(Base):

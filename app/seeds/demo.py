@@ -75,7 +75,7 @@ async def semear_demo(sessao: AsyncSession) -> dict[str, object]:
             "objetivos combinados desde a primeira sessão."
         ),
         status_cadastro=StatusCadastro.APROVADO,
-        foto_url=None,
+        foto_chave=None,
     )
     sessao.add(perfil)
     await sessao.flush()

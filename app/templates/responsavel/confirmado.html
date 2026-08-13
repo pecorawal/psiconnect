@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Autorização registrada{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-20 text-center">
+  <div aria-hidden="true"
+       class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-teal-100 text-3xl">
+    ✓
+  </div>
+  <h1 class="mt-6 text-2xl font-bold text-slate-900">Autorização registrada</h1>
+  <p class="mt-3 text-slate-600">
+    Obrigado. O atendimento já pode ser marcado.
+  </p>
+  <p class="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+    Guardamos seu documento criptografado e vamos apagá-lo assim que a verificação
+    for concluída. Você pode revogar esta autorização a qualquer momento.
+  </p>
+  <a href="/" class="mt-8 inline-block rounded-xl bg-teal-700 px-5 py-2.5 font-medium text-white
+                     hover:bg-teal-800">
+    Ir para o início
+  </a>
+</section>
+{% endblock %}

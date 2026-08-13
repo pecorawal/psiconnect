@@ -13,6 +13,9 @@ os.environ.setdefault("APP_SECRET_KEY", "chave-de-teste-com-mais-de-32-bytes-ok!
 os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://psiconnect:psiconnect@localhost:5433/psiconnect"
 )
+# Chave fixa de teste (32 bytes em base64). Não é segredo: só precisa existir
+# para que cifrar/decifrar funcione na suíte.
+os.environ.setdefault("CHAVE_CRIPTO_TRANSCRICAO", "xJhth3V0AdM4ke77niecNLLC9sdB5qaC4k9zoEzhpG8=")
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import (

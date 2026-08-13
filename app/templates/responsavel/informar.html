@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Quem é seu responsável?{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-12">
+  {% if request.query_params.get("enviado") %}
+  <div role="status" class="mb-6 rounded-2xl border border-teal-200 bg-teal-50 p-5">
+    <h2 class="font-semibold text-teal-900">Convite enviado</h2>
+    <p class="mt-2 text-sm text-teal-900">
+      Avisamos seu responsável. Assim que ele autorizar, você poderá marcar sua
+      primeira sessão. O convite vale por 7 dias.
+    </p>
+  </div>
+  {% endif %}
+
+  <h1 class="text-2xl font-bold text-slate-900">Quem é seu responsável?</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Como você tem menos de 18 anos, a lei exige a autorização de um dos seus pais ou
+    do seu responsável legal antes do primeiro atendimento.
+  </p>
+
+  {% if pendente and not request.query_params.get("enviado") %}
+  <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Ainda estamos aguardando a autorização. Se preferir, envie o convite de novo
+    ou corrija o contato abaixo.
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('informar_responsavel') }}" class="mt-8 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ campo("responsavel_nome", "Nome do responsável", requerido=true) }}
+    {{ campo("parentesco", "Quem é essa pessoa para você?", placeholder="mãe, pai, avó…") }}
+    {{ campo("responsavel_email", "E-mail do responsável", tipo="email") }}
+    {{ campo("responsavel_telefone", "WhatsApp do responsável", tipo="tel",
+             placeholder="+55 11 90000-0000",
+             ajuda="Informe pelo menos um dos dois: e-mail ou WhatsApp.") }}
+
+    {{ botao("Enviar convite") }}
+  </form>
+
+  <p class="mt-8 rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
+    Se você está em sofrimento agora e não pode esperar, o <strong>CVV atende 24h
+    pelo 188</strong>, de graça e em sigilo — sem precisar de autorização.
+  </p>
+</section>
+{% endblock %}

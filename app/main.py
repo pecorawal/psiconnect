@@ -29,10 +29,12 @@ from app.web.rotas import (
     auth,
     avaliacao,
     dev,
+    midia,
     paciente,
     painel,
     profissional,
     publico,
+    responsavel,
 )
 from app.web.rotas import sessao as rotas_sessao
 
@@ -64,6 +66,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Falha cedo: melhor não subir do que subir inseguro.
     settings.validar_para_producao()
     settings.validar_armazenamento()
+    settings.validar_criptografia()
     init_engine(settings)
     app.state.providers = montar_providers(settings)
     log.info(
@@ -235,6 +238,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(painel.montar(templates))
     app.include_router(rotas_sessao.montar(templates))
     app.include_router(avaliacao.montar(templates))
+    app.include_router(responsavel.montar(templates))
+    # /midia por último: tem rota curinga /midia/{token} que capturaria
+    # /midia/foto/... se viesse antes das específicas.
+    app.include_router(midia.montar(templates))
 
     # Rotas de dev nem sequer existem fora de dev/teste: são atalhos que
     # substituem worker, webhook e aprovação de cadastro.

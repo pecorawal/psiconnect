@@ -35,12 +35,15 @@ from app.models import (
     Papel,
     PerfilPaciente,
     SessaoLogin,
+    StatusPaciente,
     Usuario,
 )
 
 log = get_logger(__name__)
 
-IDADE_MINIMA = 18
+IDADE_MAIORIDADE = 18
+#: Abaixo disto a plataforma não atende.
+IDADE_MINIMA_ATENDIMENTO = 12
 
 
 class SenhaFraca(ErroDominio):
@@ -48,11 +51,11 @@ class SenhaFraca(ErroDominio):
     mensagem_padrao = "Escolha uma senha mais forte."
 
 
-class MenorDeIdade(ErroDominio):
-    codigo = "menor_de_idade"
+class IdadeNaoAtendida(ErroDominio):
+    codigo = "idade_nao_atendida"
     mensagem_padrao = (
-        "No momento a plataforma atende apenas maiores de 18 anos. "
-        "Para atendimento infantojuvenil, procure um profissional diretamente."
+        "No momento a plataforma atende a partir de 12 anos. "
+        "Para crianças menores, procure um profissional de psicologia infantil."
     )
 
 
@@ -90,15 +93,16 @@ class AuthService:
         if (erro := validar_forca_senha(dados.senha)) is not None:
             raise SenhaFraca(erro, campo="senha")
 
-        # Decisão consciente da Fase 1: o consentimento de responsável
-        # (LGPD art. 14) ainda não está implementado, então é melhor recusar do
-        # que tratar dado de menor sem base legal.
-        if (
-            papel is Papel.PACIENTE
-            and dados.data_nascimento is not None
-            and _idade_em_anos(dados.data_nascimento) < IDADE_MINIMA
-        ):
-            raise MenorDeIdade(campo="data_nascimento")
+        # Menor de 18 pode se cadastrar, mas a conta nasce PENDENTE e não
+        # agenda nada até o responsável autorizar (LGPD art. 14). Abaixo de 12
+        # a plataforma não atende: psicoterapia infantil exige setting e
+        # formação que este produto não contempla.
+        eh_menor_de_idade = False
+        if papel is Papel.PACIENTE and dados.data_nascimento is not None:
+            idade = _idade_em_anos(dados.data_nascimento)
+            if idade < IDADE_MINIMA_ATENDIMENTO:
+                raise IdadeNaoAtendida(campo="data_nascimento")
+            eh_menor_de_idade = idade < IDADE_MAIORIDADE
 
         usuario = Usuario(
             email=dados.email.strip().lower(),
@@ -117,7 +121,15 @@ class AuthService:
 
         if papel is Papel.PACIENTE:
             self.sessao.add(
-                PerfilPaciente(usuario_id=usuario.id, data_nascimento=dados.data_nascimento)
+                PerfilPaciente(
+                    usuario_id=usuario.id,
+                    data_nascimento=dados.data_nascimento,
+                    status=(
+                        StatusPaciente.PENDENTE_RESPONSAVEL
+                        if eh_menor_de_idade
+                        else StatusPaciente.ATIVO
+                    ),
+                )
             )
             await self.sessao.flush()
 

@@ -188,6 +188,33 @@ class Settings(BaseSettings):
         if faltando:
             raise RuntimeError("ARMAZENAMENTO_PROVIDER=s3 exige: " + ", ".join(faltando))
 
+    def validar_criptografia(self) -> None:
+        """Recusa subir sem a chave de criptografia.
+
+        Sem ela, o app aceita o cadastro de um adolescente e só quebra quando o
+        responsável envia o documento — com 500 na cara de quem estava tentando
+        autorizar o atendimento do filho. Melhor não subir.
+        """
+        from app.core.cripto import TAMANHO_CHAVE
+
+        if not self.chave_cripto_transcricao:
+            raise RuntimeError(
+                "CHAVE_CRIPTO_TRANSCRICAO não definida. Gere uma com:\n"
+                '  python -c "from app.core.cripto import gerar_chave_base64; '
+                'print(gerar_chave_base64())"'
+            )
+        import base64
+
+        try:
+            bruta = base64.b64decode(self.chave_cripto_transcricao)
+        except Exception as exc:
+            raise RuntimeError("CHAVE_CRIPTO_TRANSCRICAO não é base64 válido.") from exc
+        if len(bruta) != TAMANHO_CHAVE:
+            raise RuntimeError(
+                f"CHAVE_CRIPTO_TRANSCRICAO precisa ter {TAMANHO_CHAVE} bytes; "
+                f"veio com {len(bruta)}."
+            )
+
     def validar_para_producao(self) -> None:
         """Falha cedo se a configuração for insegura para produção.
 

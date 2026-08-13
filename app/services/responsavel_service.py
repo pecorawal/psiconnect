@@ -224,14 +224,17 @@ class ResponsavelService:
         for canal, destino in destinos:
             if not destino:
                 continue
-            # O responsável pode não ter conta; a notificação fica ligada ao
-            # menor, que é quem existe como usuário.
+            # A notificação fica LIGADA ao menor (é ele que existe como
+            # usuário), mas o DESTINO é o contato do responsável. Sem esse
+            # destino explícito, o convite iria para o e-mail do próprio
+            # adolescente, que então poderia se autoautorizar.
             await notificacoes.enfileirar(
                 usuario=usuario,
                 canal=canal,
                 template=TEMPLATE_CONVITE,
-                contexto={**contexto, "destino": destino},
+                contexto=contexto,
                 chave_idempotencia=f"convite-resp:{verificacao.id}:{canal.value}",
+                destino=destino,
             )
         verificacao.enviado_em = agora_utc()
         verificacao.tentativas_envio += 1

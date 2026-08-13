@@ -18,7 +18,7 @@ from app.core.sessao_web import (
 )
 from app.core.templating import responder
 from app.db.sessao import UnitOfWork
-from app.models import Papel, TipoTermo
+from app.models import Papel, PerfilPaciente, StatusPaciente, TipoTermo
 from app.services.auth_service import AuthService, DadosCadastro
 from app.services.termos_service import TermosService
 
@@ -129,7 +129,18 @@ def montar(templates: Jinja2Templates) -> APIRouter:
             )
             token = await AuthService(sessao).criar_sessao(usuario, contexto)
 
-        resposta = RedirectResponse("/paciente/sintomas", status_code=303)
+        # Menor de 18 vai primeiro informar quem responde por ele; sem a
+        # autorização, o fluxo de agendamento não abre.
+        # Consulta explícita: `usuario.perfil_paciente` acabou de ser criado
+        # nesta sessão e o relacionamento ainda não foi carregado — tocá-lo
+        # dispararia lazy load fora do contexto async.
+        perfil = await sessao.get(PerfilPaciente, usuario.id)
+        destino = (
+            "/cadastro/responsavel"
+            if perfil is not None and perfil.status is StatusPaciente.PENDENTE_RESPONSAVEL
+            else "/paciente/sintomas"
+        )
+        resposta = RedirectResponse(destino, status_code=303)
         definir_cookie_sessao(resposta, settings, token)
         return resposta
 
