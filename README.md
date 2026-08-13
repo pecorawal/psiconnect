@@ -4,8 +4,9 @@ Plataforma de conexão entre psicólogos e pacientes: um ecossistema digital que
 facilita o encontro entre profissionais de psicologia e pessoas que buscam
 acompanhamento terapêutico — com sigilo, do computador, do tablet ou do celular.
 
-> **Status:** Fase 0 (fundação) concluída. Em desenvolvimento.
-> O roadmap completo está em [`docs/05-roadmap.md`](docs/05-roadmap.md).
+> **Status:** Fases 0 e 1 concluídas — o fluxo completo funciona ponta a ponta,
+> com pagamento, vídeo e notificações simulados. O roadmap está em
+> [`docs/05-roadmap.md`](docs/05-roadmap.md).
 
 ## Como funciona
 
@@ -41,7 +42,9 @@ Pré-requisitos: Python 3.12, e `podman` ou `docker` com compose.
 
 ```bash
 make bootstrap     # venv + deps + Postgres/pgvector + migrations + seed
+make seed-demo     # psi@demo.br e pac@demo.br, senha: psiconnect123
 make dev           # http://localhost:8000
+make worker        # 2º terminal: salas T-20min, outbox, expiração de reservas
 ```
 
 Se a porta 8000 estiver ocupada: `make PORTA=8010 dev`.

@@ -20,7 +20,7 @@ specs do `efatafy` para `docs/`.
 
 ---
 
-## Fase 1 — Walking skeleton (~2 semanas)
+## Fase 1 — Walking skeleton ✅ concluída
 
 A fatia fina, ponta a ponta: **cadastro → agenda → paciente agenda → ambos na
 sala de vídeo**.
@@ -43,9 +43,18 @@ sala de vídeo**.
    **lobby** com polling HTMX, profissional **admite**, ambos entram.
 10. Encerrar → `REALIZADA`.
 
-**Pronto quando:** em dois navegadores, do zero até os dois na sala, em ~6 min.
-**Fora de escopo:** pacotes 5/10, Mercado Pago, WhatsApp/e-mail reais,
-transcrição, PWA, nota fiscal, admin.
+11. Worker: sala em T-20min, expiração de reservas, no-show, outbox com retry.
+12. Avaliação obrigatória de 3 perguntas (R11) com pontuação.
+
+**Verificado:** o teste `tests/e2e/test_fluxo_completo.py` percorre os 21 passos
+por HTTP, com dois clientes distintos, e confere a trilha de eventos ao final.
+
+**Fora de escopo (segue nas fases seguintes):** pacotes 5/10 no fluxo real,
+Mercado Pago, WhatsApp/e-mail reais, transcrição, PWA, nota fiscal, painel admin.
+
+**Decisão que ficou:** profissional recém-cadastrado fica `EM_ANALISE` e não
+aparece para pacientes até a verificação do registro no conselho. Isso vale em
+produção; hoje quem aprova é uma rota `/dev`, e na Fase 6 passa a ser o admin.
 
 ---
 
@@ -58,12 +67,13 @@ de assinatura, planos de 5 e 10 sessões com expiração de créditos, estorno,
 
 ---
 
-## Fase 3 — Notificações, agenda operacional e avaliação (~1,5 semana)
+## Fase 3 — Notificações reais (~1 semana)
 
-Worker de outbox com retry exponencial, SMTP real, WhatsApp Cloud API com
-templates aprovados, link em T-20min de verdade, lembretes T-24h e T-1h,
-expiração de reserva, no-show automático, tolerância de 15 min, **avaliação
-obrigatória de 3 perguntas**, `EventoPontuacao` e telas de pontos.
+O worker, a outbox com retry, a expiração de reserva, o no-show e a avaliação
+obrigatória já saíram na Fase 1. Falta trocar os provedores fake pelos reais:
+`SmtpEmailProvider` e WhatsApp Cloud API — este exige **templates HSM aprovados
+pela Meta**, o que tem prazo e precisa entrar no planejamento. Mais os lembretes
+T-24h e T-1h, e as telas de pontos.
 
 ---
 
