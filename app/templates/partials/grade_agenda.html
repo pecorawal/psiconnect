@@ -3,7 +3,7 @@
   {% for indice in range(7) %}
   {% set janelas = por_dia.get(indice, []) %}
   <div class="rounded-2xl border border-slate-200 bg-white p-4
-              {% if not janelas %}border-dashed bg-slate-50/50{% endif %}">
+              {% if not janelas %}border-dashed bg-slate-50/50 {% endif %}">
     <h2 class="text-sm font-semibold text-slate-900">
       {{ dias_semana[indice] | capitalize }}
     </h2>

@@ -1,0 +1,84 @@
+{# Tabela de contas. Alvo dos swaps HTMX ao alterar papel ou status. #}
+<div id="tabela-usuarios" class="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+  <table class="w-full min-w-[44rem] text-sm">
+    <thead class="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
+      <tr>
+        <th scope="col" class="px-5 py-3 font-medium">Pessoa</th>
+        <th scope="col" class="px-5 py-3 font-medium">Tipo de conta</th>
+        <th scope="col" class="px-5 py-3 font-medium">Papel administrativo</th>
+        <th scope="col" class="px-5 py-3 font-medium">Situação</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for u in usuarios %}
+      <tr class="{% if not u.ativo %}bg-slate-50/60 {% endif %}">
+        <th scope="row" class="px-5 py-3 text-left font-normal">
+          <span class="block font-medium text-slate-900">{{ u.nome_completo }}</span>
+          <span class="block text-xs text-slate-500">{{ u.email }}</span>
+        </th>
+        <td class="px-5 py-3">
+          <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700">
+            {{ {"PACIENTE": "paciente", "PROFISSIONAL": "profissional",
+                "ADMIN": "administração"}[u.papel.value] }}
+          </span>
+        </td>
+        <td class="px-5 py-3">
+          {% if u.papel.value != "ADMIN" %}
+          {# Paciente e profissional não usam papel administrativo: as regras
+             deles são de domínio, não CRUD por módulo. #}
+          <span class="text-xs text-slate-400">não se aplica</span>
+          {% elif pode_editar %}
+          <form hx-patch="/admin/usuarios/{{ u.id }}"
+                hx-target="#tabela-usuarios" hx-swap="outerHTML" class="flex items-center gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="ativo" value="{{ '1' if u.ativo else '' }}">
+            <select name="role_id" onchange="this.form.requestSubmit()"
+                    aria-label="Papel de {{ u.nome_completo }}"
+                    class="rounded-lg border border-slate-300 px-2 py-1 text-xs">
+              <option value="">— sem papel —</option>
+              {% for p in papeis %}
+              <option value="{{ p.id }}" {% if u.role_id == p.id %}selected {% endif %}>
+                {{ p.nome }}
+              </option>
+              {% endfor %}
+            </select>
+          </form>
+          {% else %}
+          <span class="text-xs text-slate-600">
+            {{ u.role.nome if u.role else "— sem papel —" }}
+          </span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3">
+          {% if pode_editar and u.papel.value == "ADMIN" %}
+          <form hx-patch="/admin/usuarios/{{ u.id }}"
+                hx-target="#tabela-usuarios" hx-swap="outerHTML">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="role_id" value="{{ u.role_id or '' }}">
+            <input type="hidden" name="ativo" value="{{ '' if u.ativo else '1' }}">
+            <button type="submit"
+                    class="rounded-full px-2.5 py-0.5 text-xs
+                           {% if u.ativo %}bg-teal-100 text-teal-800 hover:bg-teal-200
+                           {% else %}bg-slate-200 text-slate-700 hover:bg-slate-300{% endif %}">
+              {{ "ativa" if u.ativo else "desativada" }}
+            </button>
+          </form>
+          {% else %}
+          <span class="rounded-full px-2.5 py-0.5 text-xs
+                       {% if u.ativo %}bg-teal-100 text-teal-800
+                       {% else %}bg-slate-200 text-slate-700{% endif %}">
+            {{ "ativa" if u.ativo else "desativada" }}
+          </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" class="px-5 py-10 text-center text-slate-500">
+          Nenhuma conta encontrada.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

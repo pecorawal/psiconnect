@@ -15,7 +15,7 @@
     id="{{ nome }}"
     name="{{ nome }}"
     value="{{ valor }}"
-    {% if requerido %}required{% endif %}
+    {% if requerido %}required {% endif %}
     {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
     {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
     {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
@@ -40,7 +40,7 @@
     id="{{ nome }}"
     name="{{ nome }}"
     rows="{{ linhas }}"
-    {% if requerido %}required{% endif %}
+    {% if requerido %}required {% endif %}
     {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
     {% if ajuda %}aria-describedby="{{ nome }}-ajuda"{% endif %}
     {{ extra | safe }}

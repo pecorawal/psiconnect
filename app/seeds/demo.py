@@ -22,6 +22,7 @@ from app.models import (
     Papel,
     PerfilPaciente,
     PerfilProfissional,
+    Role,
     StatusCadastro,
     Usuario,
 )
@@ -31,6 +32,7 @@ SENHA_DEMO = "psiconnect123"
 
 EMAIL_PROFISSIONAL = "psi@demo.br"
 EMAIL_PACIENTE = "pac@demo.br"
+EMAIL_ADMIN = "admin@demo.br"
 
 #: (slug, preço em centavos)
 ESPECIALIDADES_DEMO = (
@@ -128,9 +130,21 @@ async def semear_demo(sessao: AsyncSession) -> dict[str, object]:
     await sessao.flush()
     sessao.add(PerfilPaciente(usuario_id=usuario_pac.id, data_nascimento=date(1990, 5, 20)))
 
+    # --- Administrador ------------------------------------------------------
+    papel_admin = await sessao.scalar(select(Role).where(Role.nome == "Administrador"))
+    usuario_admin = Usuario(
+        email=EMAIL_ADMIN,
+        senha_hash=senha_hash,
+        papel=Papel.ADMIN,
+        nome_completo="Administração PsiConnect",
+        role_id=papel_admin.id if papel_admin else None,
+    )
+    sessao.add(usuario_admin)
+
     await sessao.flush()
     return {
         "status": "criado",
+        "admin": EMAIL_ADMIN,
         "profissional": EMAIL_PROFISSIONAL,
         "paciente": EMAIL_PACIENTE,
         "senha": SENHA_DEMO,

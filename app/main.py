@@ -26,6 +26,7 @@ from app.core.templating import criar_templates, eh_htmx
 from app.db.sessao import fechar_engine, init_engine
 from app.providers.registry import montar_providers
 from app.web.rotas import (
+    admin,
     auth,
     avaliacao,
     dev,
@@ -239,6 +240,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(rotas_sessao.montar(templates))
     app.include_router(avaliacao.montar(templates))
     app.include_router(responsavel.montar(templates))
+    app.include_router(admin.montar(templates))
     # /midia por último: tem rota curinga /midia/{token} que capturaria
     # /midia/foto/... se viesse antes das específicas.
     app.include_router(midia.montar(templates))

@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Parâmetros do sistema{% endblock %}
+
+{% block admin_conteudo %}
+<h1 class="text-2xl font-bold text-slate-900">Parâmetros do sistema</h1>
+<p class="mt-2 text-sm text-slate-600">
+  Regras de negócio ajustáveis sem deploy. Mudanças valem para operações
+  <strong>futuras</strong>: compras já feitas guardam o percentual de comissão que
+  valia no momento, e não são reprecificadas.
+</p>
+
+{% if request.query_params.get("salvo") %}
+<p role="status" class="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm
+                        text-teal-900">Parâmetro atualizado.</p>
+{% endif %}
+
+<div class="mt-6 space-y-3">
+  {% for p in parametros %}
+  <div class="rounded-2xl border border-slate-200 bg-white p-5">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0 flex-1">
+        <p class="font-mono text-xs text-slate-500">{{ p.chave }}</p>
+        {% if p.descricao %}
+        <p class="mt-1 text-sm leading-relaxed text-slate-600">{{ p.descricao }}</p>
+        {% endif %}
+        {% if p.atualizado_em %}
+        <p class="mt-1 text-xs text-slate-400">
+          Alterado em {{ p.atualizado_em | data_hora_br }}
+        </p>
+        {% endif %}
+      </div>
+
+      {% if pode_editar %}
+      {# hx-patch, não POST: a política central deriva a operação do método, e
+         editar tem de exigir `update`, não `create`. #}
+      <form hx-patch="/admin/parametros/{{ p.chave }}"
+            class="flex shrink-0 items-center gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="text" name="valor" value="{{ p.valor }}" inputmode="decimal"
+               aria-label="Valor de {{ p.chave }}"
+               class="w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-right
+                      tabular-nums focus:border-teal-600 focus:outline-none">
+        <button type="submit"
+                class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700
+                       hover:bg-slate-50">
+          Salvar
+        </button>
+      </form>
+      {% else %}
+      <span class="shrink-0 font-mono text-sm text-slate-900">{{ p.valor }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
