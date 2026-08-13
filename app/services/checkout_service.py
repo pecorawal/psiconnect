@@ -26,6 +26,7 @@ from app.models import (
     MetodoPagamento,
     Pagamento,
     PerfilPaciente,
+    PerfilProfissional,
     Plano,
     SlugPlano,
     StatusAgendamento,
@@ -99,6 +100,12 @@ class CheckoutService:
         if plano is None:
             raise NaoEncontrado("Plano não encontrado.")
 
+        # Query explícita, não `agendamento.profissional`: acesso lazy em
+        # contexto async estoura MissingGreenlet.
+        profissional = await self.sessao.get(PerfilProfissional, agendamento.profissional_id)
+        if profissional is None:
+            raise NaoEncontrado("Profissional não encontrado.")
+
         # --- Valores -------------------------------------------------------
         valor_sessao = agendamento.valor_centavos
         desconto = plano.desconto_percentual
@@ -148,6 +155,14 @@ class CheckoutService:
                 pagador_nome=paciente.usuario.nome_completo,
                 pagador_email=paciente.usuario.email,
                 comissao_centavos=reparticao.comissao_plataforma_centavos,
+                # Sem isto o split não acontece: a cobrança é aceita e a
+                # comissão simplesmente não é retida. Fica nulo enquanto o
+                # profissional não conectar a conta por OAuth.
+                recebedor_externo_id=profissional.mp_user_id,
+                metadados={
+                    "agendamento_id": str(agendamento.id),
+                    "compra_id": str(compra.id),
+                },
             )
         )
 
@@ -166,6 +181,7 @@ class CheckoutService:
             pix_copia_cola=cobranca.pix_copia_cola,
             pix_expira_em=cobranca.pix_expira_em,
             chave_idempotencia=chave,
+            agendamento_origem_id=agendamento.id,
             payload_bruto=dict(cobranca.payload_bruto),
         )
         self.sessao.add(pagamento)
@@ -223,6 +239,55 @@ class CheckoutService:
             "checkout.confirmado",
             compra_id=str(compra.id),
             agendamento_id=str(agendamento.id),
+        )
+
+    async def desfazer_pagamento(
+        self, pagamento: Pagamento, agendamento: Agendamento
+    ) -> None:
+        """Recusa, cancelamento ou estorno: solta o horário e devolve o crédito.
+
+        Sem isto, um Pix que expira ou um estorno deixariam o horário travado
+        (`PENDENTE_PAGAMENTO` participa da constraint de sobreposição) e o
+        profissional perderia a vaga sem receber nada.
+
+        Idempotente: um segundo webhook de estorno não faz nada.
+        """
+        compra = await self.sessao.get(CompraPlano, pagamento.compra_plano_id)
+        if compra is None or compra.status is StatusCompra.CANCELADA:
+            return
+
+        compra.status = StatusCompra.CANCELADA
+
+        # Devolve os créditos que ainda não foram usados. Os já consumidos
+        # ficam como estão: a sessão pode já ter acontecido, e apagar o rastro
+        # de quem pagou o quê inviabilizaria a conciliação.
+        creditos = await self.sessao.scalars(
+            select(CreditoSessao).where(
+                CreditoSessao.compra_plano_id == compra.id,
+                CreditoSessao.status == StatusCredito.CONSUMIDO,
+                CreditoSessao.agendamento_id == agendamento.id,
+            )
+        )
+        for credito in creditos:
+            credito.status = StatusCredito.ESTORNADO
+            credito.agendamento_id = None
+            credito.consumido_em = None
+
+        if agendamento.status in (
+            StatusAgendamento.PENDENTE_PAGAMENTO,
+            StatusAgendamento.CONFIRMADO,
+        ):
+            # EXPIRADO, não CANCELADO_*: a origem é a falta de pagamento, não
+            # uma decisão do paciente nem do profissional. A distinção importa
+            # para a política de no-show e para os relatórios.
+            agendamento.status = StatusAgendamento.EXPIRADO
+
+        await self.sessao.flush()
+        log.info(
+            "checkout.desfeito",
+            compra_id=str(compra.id),
+            agendamento_id=str(agendamento.id),
+            motivo=pagamento.status.value,
         )
 
     async def _consumir_credito(

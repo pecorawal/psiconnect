@@ -42,7 +42,21 @@ def montar_providers(settings: Settings) -> Providers:
 def _pagamento(settings: Settings) -> PaymentProvider:
     if settings.pagamento_provider == "fake":
         return FakePaymentProvider()
-    # MercadoPagoPaymentProvider chega na Fase 2.
+    if settings.pagamento_provider == "mercadopago":
+        from app.providers.pagamento.mercadopago import MercadoPagoPaymentProvider
+
+        # Falhar aqui, no boot, é melhor do que falhar no primeiro checkout: o
+        # erro aparece para quem está subindo a aplicação, não para o paciente.
+        if not settings.mercadopago_access_token:
+            raise ProviderIndisponivel(
+                "MERCADOPAGO_ACCESS_TOKEN não configurado."
+            )
+        if not settings.mercadopago_webhook_secret:
+            raise ProviderIndisponivel(
+                "MERCADOPAGO_WEBHOOK_SECRET não configurado — sem ele o webhook "
+                "aceitaria confirmação de pagamento forjada."
+            )
+        return MercadoPagoPaymentProvider(settings)
     raise ProviderIndisponivel(
         f"Provedor de pagamento '{settings.pagamento_provider}' ainda não implementado."
     )

@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import saude
+from app.api.webhooks import mercadopago as webhook_mercadopago
 from app.core.config import RAIZ_PROJETO, Settings, get_settings
 from app.core.deps import obter_usuario_opcional
 from app.core.erros import ErroDominio
@@ -233,6 +234,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         name="static",
     )
     app.include_router(saude.router)
+    # Webhook fica FORA de `contexto_usuario`: quem chama é o Mercado Pago, sem
+    # cookie de sessão. A autenticação é a assinatura HMAC.
+    app.include_router(webhook_mercadopago.router)
 
     # Resolver o usuário em TODA rota HTML, e não só nas que precisam dele:
     # o cabeçalho é renderizado em toda página, e sem isto ele mostraria

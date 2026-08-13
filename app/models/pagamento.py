@@ -18,6 +18,8 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
@@ -190,6 +192,13 @@ class Pagamento(UUIDPk, Timestamps, Base):
     pix_copia_cola: Mapped[str | None] = mapped_column(Text)
     pix_expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    #: O agendamento que originou a compra. Num pacote de 5 sessões, é a
+    #: primeira delas -- as outras quatro consomem créditos depois. Existe para
+    #: o webhook saber o que confirmar quando o Pix é pago minutos mais tarde.
+    agendamento_origem_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("agendamentos.id", ondelete="SET NULL")
+    )
+
     #: Impede cobrar duas vezes se o usuário der duplo-clique em "pagar".
     chave_idempotencia: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
     payload_bruto: Mapped[dict[str, object] | None] = mapped_column(JSONB)
@@ -207,4 +216,42 @@ class Pagamento(UUIDPk, Timestamps, Base):
             name="parcelas_nao_negativas",
         ),
         Index("ix_pagamentos_compra", "compra_plano_id"),
+    )
+
+
+class EventoWebhook(UUIDPk, Timestamps, Base):
+    """Registro de todo webhook recebido, para idempotência e auditoria.
+
+    O Mercado Pago **reenvia** quando não recebe 200 rápido o bastante, e pode
+    entregar fora de ordem ou em duplicata. Sem esta tabela, um reenvio de
+    "pagamento aprovado" creditaria a sessão duas vezes.
+
+    A `UNIQUE` em ``(provedor, evento_id_externo)`` é o que garante isso -- não a
+    checagem em Python, que perde a corrida quando dois reenvios chegam juntos.
+    A inserção acontece **antes** do processamento: se o processamento falhar,
+    a linha fica com ``processado_em`` nulo e o erro registrado, o que dá uma
+    fila de reprocessamento em vez de um evento perdido em silêncio.
+    """
+
+    __tablename__ = "eventos_webhook"
+
+    provedor: Mapped[str] = mapped_column(String(30), nullable=False)
+    evento_id_externo: Mapped[str] = mapped_column(String(120), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(60), nullable=False)
+    provedor_pagamento_id: Mapped[str | None] = mapped_column(String(100))
+
+    payload: Mapped[dict[str, object] | None] = mapped_column(JSONB)
+    processado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    erro: Mapped[str | None] = mapped_column(Text)
+    tentativas: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+    __table_args__ = (
+        UniqueConstraint("provedor", "evento_id_externo", name="uq_evento_webhook"),
+        Index("ix_eventos_webhook_pagamento", "provedor_pagamento_id"),
+        # Fila de reprocessamento: eventos que chegaram mas não completaram.
+        Index(
+            "ix_eventos_webhook_pendentes",
+            "criado_em",
+            postgresql_where=text("processado_em IS NULL"),
+        ),
     )

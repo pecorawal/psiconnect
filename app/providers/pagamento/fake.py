@@ -14,12 +14,18 @@ import uuid
 from collections.abc import Mapping
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any
 
 from app.core.dinheiro import percentual_de
 from app.core.tempo import agora_utc
 from app.models.enums import MetodoPagamento, StatusPagamento
 from app.providers.base import Cobranca, CobrancaRequest, EventoPagamento
+from app.providers.pagamento.assinatura import validar_assinatura_mp
+from app.providers.pagamento.mercadopago import WebhookInvalido
+
+#: Segredo fixo e público do fake. Não protege nada -- existe para o fake exigir
+#: assinatura do mesmo jeito que o real, e assim manter a rota honesta.
+SEGREDO_DEV = "psiconnect-webhook-dev"
+
 
 #: Taxas aproximadas de mercado, usadas pelo simulador de recebimento.
 TAXAS: dict[MetodoPagamento, Decimal] = {
@@ -114,16 +120,20 @@ class FakePaymentProvider:
         return estornada
 
     def validar_webhook(self, headers: Mapping[str, str], corpo: bytes) -> EventoPagamento:
-        """No fake não há assinatura; o formato do evento é o mesmo do real."""
-        import json
+        """Mesmo formato e **mesma exigência de assinatura** do provedor real.
 
-        dados: dict[str, Any] = json.loads(corpo or b"{}")
-        return EventoPagamento(
-            evento_id_externo=dados.get("id", uuid.uuid4().hex),
-            tipo=dados.get("tipo", "payment.updated"),
-            provedor_pagamento_id=dados.get("provedor_pagamento_id", ""),
-            status=StatusPagamento(dados.get("status", StatusPagamento.APROVADO.value)),
-            payload=dados,
+        As duas coisas foram divergentes até a suíte de contrato apontar. O
+        fake lia um payload inventado (``provedor_pagamento_id`` na raiz) e
+        aceitava qualquer requisição sem assinatura. Como a rota de webhook é
+        testada contra o fake, um esquecimento de validação na rota passaria
+        despercebido -- e trocar o provider por ``fake`` fora de dev deixaria o
+        endpoint aberto para qualquer um confirmar pagamento.
+
+        O segredo é fixo e público (``SEGREDO_DEV``): o objetivo aqui é manter o
+        formato honesto, não proteger nada.
+        """
+        return validar_assinatura_mp(
+            headers, corpo, segredo=SEGREDO_DEV, erro=WebhookInvalido
         )
 
 

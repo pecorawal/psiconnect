@@ -38,7 +38,13 @@ from app.models.enums import (
 )
 from app.models.lgpd import AceiteTermo, LogAuditoria, TermoVersionado
 from app.models.operacional import Avaliacao, EventoPontuacao, Notificacao
-from app.models.pagamento import CompraPlano, CreditoSessao, Pagamento, Plano
+from app.models.pagamento import (
+    CompraPlano,
+    CreditoSessao,
+    EventoWebhook,
+    Pagamento,
+    Plano,
+)
 from app.models.parametro import ChaveParametro, ParametroSistema
 from app.models.perfil import (
     LIMITE_DESCRICAO,
@@ -79,6 +85,7 @@ __all__ = [
     "Especialidade",
     "EventoPontuacao",
     "EventoSessao",
+    "EventoWebhook",
     "LogAuditoria",
     "MetodoPagamento",
     "Notificacao",
