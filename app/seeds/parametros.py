@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
+from app.core.tempo import agora_utc
 from app.models.parametro import ChaveParametro, ParametroSistema
 
 
@@ -30,7 +31,8 @@ def definicoes(s: Settings) -> list[Definicao]:
             "decimal",
             "Percentual retido pela plataforma sobre cada atendimento concluído. "
             "As fontes originais divergiam (5% no funcionalidades.md, 3% no mapa "
-            "mental); ver docs/adr/0005-comissao-parametrizavel.md.",
+            "mental) e o valor foi revisto para 12% para cobrir os custos de API "
+            "por sessão e a infraestrutura; ver docs/adr/0005-comissao-parametrizavel.md.",
         ),
         Definicao(
             ChaveParametro.DURACAO_SESSAO_MIN,
@@ -105,8 +107,9 @@ def definicoes(s: Settings) -> list[Definicao]:
             ChaveParametro.TAXA_CREDITO_PERCENTUAL,
             4.98,
             "decimal",
-            "Taxa estimada para cartão de crédito. ATENÇÃO: é maior que a comissão "
-            "de 5%; ver questão aberta 12 no plano sobre quem absorve essa taxa.",
+            "Taxa estimada para cartão de crédito. É descontada do profissional, "
+            "não da plataforma -- somada à comissão, define quanto ele perde por "
+            "sessão e é o número que aparece no simulador de recebimento.",
         ),
         Definicao(
             ChaveParametro.TAXA_DEBITO_PERCENTUAL,
@@ -128,3 +131,39 @@ async def semear_parametros(sessao: AsyncSession, settings: Settings) -> int:
         )
         novos += 1
     return novos
+
+
+async def atualizar_parametros(
+    sessao: AsyncSession, settings: Settings
+) -> list[tuple[str, Any, Any]]:
+    """Sobrescreve os parâmetros existentes com os valores do ambiente.
+
+    Deliberadamente **separado** do seed: mudar a comissão ou um limite é uma
+    decisão de negócio, não um efeito colateral de rodar `python -m app.seeds`.
+
+    Não reprecifica nada do passado: ``CompraPlano.percentual_comissao_aplicado``
+    congela o percentual no momento da compra (ADR 0005), então repasses já
+    calculados seguem com o valor que valia na época.
+
+    Devolve ``[(chave, valor_antigo, valor_novo)]`` do que mudou.
+    """
+    atuais = {p.chave: p for p in (await sessao.execute(select(ParametroSistema))).scalars().all()}
+    mudancas: list[tuple[str, Any, Any]] = []
+
+    for d in definicoes(settings):
+        parametro = atuais.get(d.chave)
+        if parametro is None:
+            sessao.add(
+                ParametroSistema(chave=d.chave, valor=d.valor, tipo=d.tipo, descricao=d.descricao)
+            )
+            mudancas.append((d.chave, None, d.valor))
+            continue
+
+        if str(parametro.valor) != str(d.valor):
+            mudancas.append((d.chave, parametro.valor, d.valor))
+            parametro.valor = d.valor
+        parametro.descricao = d.descricao
+        parametro.atualizado_em = agora_utc()
+
+    await sessao.flush()
+    return mudancas

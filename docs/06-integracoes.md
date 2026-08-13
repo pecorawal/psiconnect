@@ -36,8 +36,9 @@ Free tier: **10.000 participant-minutes/mês**. Uma sessão de 50 min com 2
 participantes consome **100** → **~100 sessões/mês** no plano gratuito. Depois,
 US$ 0,004/participante-minuto = **US$ 0,40/sessão** (~R$ 2,20).
 
-Com comissão de 5% sobre uma sessão de R$ 150 (R$ 7,50), **o vídeo consome ~29%
-da receita bruta**. Instrumentar minutos consumidos desde a Fase 4; se o volume
+Com a comissão de 12% sobre uma sessão de R$ 150 (R$ 18,00), **o vídeo consome
+~12% da receita** — foi justamente esse custo, somado à transcrição, que
+motivou a revisão da comissão de 5% para 12% ([ADR 0005](adr/0005-comissao-parametrizavel.md)). Instrumentar minutos consumidos desde a Fase 4; se o volume
 crescer, **LiveKit self-hosted** transforma custo variável em infra fixa — e a
 porta `VideoProvider` existe exatamente para essa troca.
 

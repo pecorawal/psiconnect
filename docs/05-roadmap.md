@@ -121,7 +121,7 @@ Nenhuma bloqueia a Fase 1, mas todas precisam de resposta até a fase indicada:
 
 | # | Questão | Até a fase |
 |---|---|---|
-| 1 | Quem paga a taxa do gateway? No crédito (~4,98%) ela supera a comissão de 5% | 2 |
+| ~~1~~ | ~~Quem paga a taxa do gateway?~~ **Resolvido:** sai do profissional; comissão revista para 12% (ADR 0005) | — |
 | 2 | Créditos são atrelados ao profissional — se ele sair, o que acontece com os restantes? | 2 |
 | 3 | Política de no-show e cancelamento: consome crédito? quantas horas antes é gratuito? | 3 |
 | 4 | A plataforma emite NFS-e da consulta (do profissional) ou só da comissão? | 6 |

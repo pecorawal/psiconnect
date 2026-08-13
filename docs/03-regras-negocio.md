@@ -14,7 +14,7 @@ garantia.
 | R6 | Sem sobreposição de horário | `AgendamentoService` | **`EXCLUDE USING gist`** |
 | R7 | Tolerância de **15 min** de atraso | `regras/pontualidade.py` | via `EventoSessao` |
 | R8 | Link **20 min antes** | `workers/agenda.py` | `Notificacao.chave_idempotencia` |
-| R9 | **Comissão** (default 5%) | `regras/precificacao.py` | congelada em `CompraPlano` |
+| R9 | **Comissão** (default 12%) | `regras/precificacao.py` | congelada em `CompraPlano` |
 | R10 | Pontualidade do profissional | `regras/pontualidade.py` | `EventoPontuacao` UNIQUE |
 | R11 | Avaliação obrigatória | `AvaliacaoService` | — |
 

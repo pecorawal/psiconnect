@@ -177,7 +177,7 @@ class TestSimulador:
     ) -> None:
         """Requisito do mapa mental: informar comissão e custos de cartão.
 
-        Sobre R$ 150,00, a comissão padrão de 5% é R$ 7,50.
+        Sobre R$ 150,00, a comissão padrão de 12% é R$ 18,00.
         """
         perfil = await f.criar_profissional(sessao)
         async with cliente(app) as c:
@@ -185,7 +185,7 @@ class TestSimulador:
             r = await c.get("/profissional/simulador", params={"valor": "150,00"})
 
         assert r.status_code == 200
-        assert "R$ 7,50" in r.text
+        assert "R$ 18,00" in r.text
         sopa = BeautifulSoup(r.text, "html.parser")
         linhas = sopa.select("tbody tr")
         assert len(linhas) == 3  # Pix, débito e crédito

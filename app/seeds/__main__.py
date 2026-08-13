@@ -17,7 +17,7 @@ from app.core.logging import configurar_logging, get_logger
 from app.db.sessao import fechar_engine, get_sessionmaker, init_engine
 from app.seeds.demo import semear_demo
 from app.seeds.especialidades import semear_especialidades
-from app.seeds.parametros import semear_parametros
+from app.seeds.parametros import atualizar_parametros, semear_parametros
 from app.seeds.planos import semear_planos
 from app.seeds.sintomas import semear_sintomas
 from app.seeds.termos import semear_termos
@@ -25,12 +25,17 @@ from app.seeds.termos import semear_termos
 log = get_logger(__name__)
 
 
-async def executar(com_demo: bool) -> None:
+async def executar(com_demo: bool, atualizar: bool = False) -> None:
     settings = get_settings()
     configurar_logging(settings)
     init_engine(settings)
 
     async with get_sessionmaker()() as sessao, sessao.begin():
+        if atualizar:
+            # Sobrescreve valores já gravados: é uma decisão de negócio, por
+            # isso exige a flag explícita.
+            for chave, antes, depois in await atualizar_parametros(sessao, settings):
+                log.warning("seed.parametro_alterado", chave=chave, antes=antes, depois=depois)
         log.info("seed.parametros", novos=await semear_parametros(sessao, settings))
         # Ordem importa: sintomas apontam para especialidades.
         log.info("seed.especialidades", novos=await semear_especialidades(sessao))
@@ -56,8 +61,16 @@ def main() -> int:
         action="store_true",
         help="cria usuários e dados de demonstração (bloqueado em produção)",
     )
+    parser.add_argument(
+        "--atualizar-parametros",
+        action="store_true",
+        help=(
+            "sobrescreve os parâmetros de sistema já gravados com os valores do "
+            "ambiente (comissão, limites). Não reprecifica compras passadas."
+        ),
+    )
     args = parser.parse_args()
-    asyncio.run(executar(com_demo=args.demo))
+    asyncio.run(executar(com_demo=args.demo, atualizar=args.atualizar_parametros))
     return 0
 
 

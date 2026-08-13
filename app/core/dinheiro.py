@@ -42,7 +42,7 @@ def formatar_brl(centavos: Centavos) -> str:
 def percentual_de(centavos: Centavos, percentual: Decimal | float | str) -> Centavos:
     """Aplica um percentual sobre um valor, arredondando meio-para-cima.
 
-    ``percentual_de(15000, 5)`` -> ``750`` (5% de R$ 150,00 = R$ 7,50).
+    ``percentual_de(15000, 12)`` -> ``1800`` (12% de R$ 150,00 = R$ 18,00).
     """
     pct = Decimal(str(percentual))
     bruto = (Decimal(centavos) * pct) / CEM

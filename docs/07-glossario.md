@@ -16,7 +16,7 @@ usá-lo consistentemente evita que a mesma coisa apareça com três nomes.
 | **Crédito** (`CreditoSessao`) | Direito a uma sessão, comprado via plano. Uma linha por crédito, não um contador |
 | **Plano** | Avulso, pacote de 5 ou pacote de 10 sessões |
 | **Repartição** | A divisão do valor pago entre taxa do gateway, comissão, impostos e líquido do profissional |
-| **Comissão** | O percentual retido pela plataforma. Default 5%, parametrizável |
+| **Comissão** | O percentual retido pela plataforma. Default 12%, parametrizável |
 | **Sintoma** | O que o paciente sente, em linguagem leiga ("não consigo dormir") |
 | **Especialidade** | A área de atuação do profissional, em termos técnicos ("insônia", "TCC") |
 | **Matching** | O ranqueamento de profissionais a partir dos sintomas, via `SintomaEspecialidade.peso` |

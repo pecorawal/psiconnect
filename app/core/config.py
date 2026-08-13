@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     tz_padrao: str = "America/Sao_Paulo"
 
     # --- Bootstrap dos parâmetros de negócio -------------------------------
-    comissao_percentual_padrao: float = 5.0
+    comissao_percentual_padrao: float = 12.0
     duracao_sessao_padrao_min: int = 50
     intervalo_entre_sessoes_min: int = 10
     limite_horas_dia_profissional: int = 10

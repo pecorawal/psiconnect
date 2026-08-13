@@ -19,7 +19,7 @@
 | [0002](adr/0002-sessao-cookie-vs-jwt.md) | Cookie de sessão httpOnly em vez de JWT |
 | [0003](adr/0003-sem-gravacao-apenas-transcricao.md) | Só transcrição; mídia bruta descartada |
 | [0004](adr/0004-mercado-pago-split.md) | Mercado Pago com split marketplace |
-| [0005](adr/0005-comissao-parametrizavel.md) | Comissão parametrizável, default 5% |
+| [0005](adr/0005-comissao-parametrizavel.md) | Comissão parametrizável, default 12% |
 | [0006](adr/0006-disponibilidade-vs-agendamento.md) | Disponibilidade (regra) ≠ Agendamento (fato) |
 | [0007](adr/0007-pwdlib-argon2.md) | `pwdlib`/Argon2id em vez de `passlib` |
 

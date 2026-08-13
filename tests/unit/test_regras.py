@@ -212,12 +212,14 @@ class TestExpansaoDeSlots:
 class TestPrecificacao:
     """R9 — a repartição fecha sempre."""
 
-    def test_caso_do_plano(self) -> None:
-        """R$ 150,00 no Pix com comissão de 5%."""
-        r = calcular_reparticao(15000, percentual_comissao=Decimal("5"), metodo=MetodoPagamento.PIX)
-        assert r.comissao_plataforma_centavos == 750  # R$ 7,50
+    def test_comissao_padrao_sobre_uma_sessao_tipica(self) -> None:
+        """R$ 150,00 no Pix com a comissão padrão de 12%."""
+        r = calcular_reparticao(
+            15000, percentual_comissao=Decimal("12"), metodo=MetodoPagamento.PIX
+        )
+        assert r.comissao_plataforma_centavos == 1800  # R$ 18,00
         assert r.taxa_provedor_centavos == 149  # 0,99%
-        assert r.liquido_profissional_centavos == 15000 - 750 - 149
+        assert r.liquido_profissional_centavos == 15000 - 1800 - 149
 
     def test_credito_custa_mais_que_a_comissao(self) -> None:
         """No crédito a taxa (~4,98%) quase iguala a comissão de 5%.
@@ -240,7 +242,7 @@ class TestPrecificacao:
         assert r.liquido_profissional_centavos >= 0
 
     def test_simulador_cobre_todos_os_metodos(self) -> None:
-        simulacao = simular_todos_metodos(15000, percentual_comissao=Decimal("5"))
+        simulacao = simular_todos_metodos(15000, percentual_comissao=Decimal("12"))
         assert set(simulacao) == set(MetodoPagamento)
 
     @given(

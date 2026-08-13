@@ -45,8 +45,8 @@ plataforma.
 
 - **Fricção no onboarding**: o profissional só recebe depois de conectar a conta
   do Mercado Pago. Esse passo precisa entrar no wizard da Fase 2.
-- **Economia a decidir**: a taxa do crédito (~4,98%) é *maior* que a comissão
-  padrão de 5%. Se a plataforma absorver a taxa, perde dinheiro em toda venda no
-  crédito. O modelo já separa `taxa_provedor_centavos` de
-  `comissao_plataforma_centavos` para que essa política seja explícita — mas a
-  decisão de quem paga ainda é do negócio.
+- **Quem paga a taxa do gateway**: o modelo separa `taxa_provedor_centavos` de
+  `comissao_plataforma_centavos`, e hoje a taxa é descontada do **profissional**.
+  Com a comissão de 12% mais o crédito (~4,98%), ele perde ~17% do valor da
+  sessão — número exibido no simulador antes de definir o preço.
+  Ver [ADR 0005](0005-comissao-parametrizavel.md).

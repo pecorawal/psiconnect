@@ -7,7 +7,8 @@
 
   Onde o produto divergiu deste texto, a decisão está registrada em docs/adr/.
   Divergências conhecidas:
-    - taxa da plataforma: 5% aqui, 3% no mapa mental -> ADR 0005 (parametrizável, default 5%)
+    - taxa da plataforma: 5% aqui, 3% no mapa mental -> ADR 0005
+      (parametrizável; default revisto para 12% para cobrir custos de API e infra)
     - "sessão gravada"  -> ADR 0003 (apenas transcrição; mídia bruta descartada)
     - ordem do fluxo     -> sintomas -> horário -> pagamento (ver docs/01-visao-produto.md)
 -->

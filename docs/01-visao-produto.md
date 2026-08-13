@@ -82,7 +82,7 @@ por construção, sem risco de pontuar duas vezes o mesmo fato.
 
 ## Modelo de receita
 
-Comissão sobre cada atendimento **concluído**, default **5%**, parametrizável
+Comissão sobre cada atendimento **concluído**, default **12%**, parametrizável
 ([ADR 0005](adr/0005-comissao-parametrizavel.md)). O dinheiro não transita pela
 plataforma: o split do Mercado Pago envia o valor ao profissional e a comissão à
 plataforma ([ADR 0004](adr/0004-mercado-pago-split.md)).
