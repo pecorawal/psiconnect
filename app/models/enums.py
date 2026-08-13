@@ -29,6 +29,22 @@ class StatusCadastro(StrEnum):
     SUSPENSO = "SUSPENSO"
 
 
+class StatusPaciente(StrEnum):
+    ATIVO = "ATIVO"
+    #: Menor de 18 aguardando o responsável confirmar (LGPD art. 14).
+    #: Nenhum atendimento acontece nesse estado.
+    PENDENTE_RESPONSAVEL = "PENDENTE_RESPONSAVEL"
+    SUSPENSO = "SUSPENSO"
+
+
+class TipoDocumentoResponsavel(StrEnum):
+    RG = "RG"
+    CNH = "CNH"
+    PASSAPORTE = "PASSAPORTE"
+    CERTIDAO_NASCIMENTO = "CERTIDAO_NASCIMENTO"
+    OUTRO = "OUTRO"
+
+
 class StatusAgendamento(StrEnum):
     # PENDENTE_PAGAMENTO participa da constraint EXCLUDE de propósito: o fluxo é
     # sintomas -> horário -> pagamento, então o slot fica travado no checkout.
@@ -117,6 +133,8 @@ class TipoTermo(StrEnum):
     CONTRATO_PROFISSIONAL = "CONTRATO_PROFISSIONAL"
     CONSENT_DADOS_SAUDE = "CONSENT_DADOS_SAUDE"
     CONSENT_TRANSCRICAO = "CONSENT_TRANSCRICAO"
+    #: Consentimento do responsável legal por menor de 18 (LGPD art. 14).
+    CONSENT_RESPONSAVEL = "CONSENT_RESPONSAVEL"
 
 
 class CanalNotificacao(StrEnum):

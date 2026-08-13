@@ -69,6 +69,10 @@ def _notificacao(settings: Settings) -> NotificationProvider:
 def _armazenamento(settings: Settings) -> StorageProvider:
     if settings.armazenamento_provider == "local":
         return LocalStorageProvider(settings)
+    if settings.armazenamento_provider == "s3":
+        from app.providers.armazenamento.s3 import S3StorageProvider
+
+        return S3StorageProvider(settings)
     raise ProviderIndisponivel(
         f"Provedor de armazenamento '{settings.armazenamento_provider}' ainda não implementado."
     )

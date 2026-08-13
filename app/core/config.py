@@ -104,6 +104,16 @@ class Settings(BaseSettings):
 
     # --- Armazenamento -----------------------------------------------------
     armazenamento_local_dir: Path = RAIZ_PROJETO / "storage_local"
+    #: MinIO em dev; qualquer storage S3-compatível em produção.
+    s3_endpoint_url: str = "http://localhost:9010"
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_bucket: str = "psiconnect"
+    s3_region: str = "us-east-1"
+    #: MinIO exige path-style (bucket no caminho, não no subdomínio).
+    s3_path_style: bool = True
+    #: TTL do link assinado de foto de perfil.
+    s3_url_ttl_segundos: int = 60
 
     # --- Validações --------------------------------------------------------
     @field_validator("app_secret_key")
@@ -156,6 +166,27 @@ class Settings(BaseSettings):
         dialeto padrão, que é psycopg2 -- dependência que este projeto não tem.
         """
         return str(self.database_url)
+
+    def validar_armazenamento(self) -> None:
+        """Recusa subir com storage S3 sem credencial.
+
+        Sem isto o erro só aparece no primeiro upload, como
+        ``InvalidAccessKeyId`` vindo do boto3 — mensagem que não diz o que
+        fazer. Falhar no lifespan aponta direto para a variável faltando.
+        """
+        if self.armazenamento_provider != "s3":
+            return
+        faltando = [
+            nome
+            for nome, valor in (
+                ("S3_ACCESS_KEY", self.s3_access_key),
+                ("S3_SECRET_KEY", self.s3_secret_key),
+                ("S3_BUCKET", self.s3_bucket),
+            )
+            if not valor
+        ]
+        if faltando:
+            raise RuntimeError("ARMAZENAMENTO_PROVIDER=s3 exige: " + ", ".join(faltando))
 
     def validar_para_producao(self) -> None:
         """Falha cedo se a configuração for insegura para produção.

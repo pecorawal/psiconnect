@@ -25,10 +25,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.db.mixins import Timestamps
-from app.models.enums import Conselho, StatusCadastro
+from app.models.enums import Conselho, StatusCadastro, StatusPaciente
 from app.models.taxonomia import Especialidade
 
 if TYPE_CHECKING:
+    from app.models.responsavel import VerificacaoResponsavel
     from app.models.usuario import Usuario
 
 LIMITE_ESPECIALIDADES = 5
@@ -167,10 +168,20 @@ class PerfilPaciente(Timestamps, Base):
     data_nascimento: Mapped[date | None] = mapped_column(Date)
     cpf_cifrado: Mapped[bytes | None] = mapped_column()
 
-    # Menores de 18: LGPD art. 14 exige consentimento de responsável. Na Fase 1 o
-    # cadastro de menores é BLOQUEADO; estes campos existem para o fluxo futuro.
+    #: Menor de 18 nasce PENDENTE_RESPONSAVEL e não agenda nada até o
+    #: responsável confirmar (LGPD art. 14). Ver models/responsavel.py.
+    status: Mapped[StatusPaciente] = mapped_column(
+        Enum(StatusPaciente, name="status_paciente", native_enum=True),
+        nullable=False,
+        server_default=StatusPaciente.ATIVO.value,
+    )
     responsavel_legal_nome: Mapped[str | None] = mapped_column(String(150))
     responsavel_legal_cpf_cifrado: Mapped[bytes | None] = mapped_column()
+    #: Conta do responsável, quando ele também é usuário da plataforma.
+    responsavel_usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("usuarios.id", ondelete="SET NULL")
+    )
+    responsavel_confirmado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     contato_emergencia_nome: Mapped[str | None] = mapped_column(String(150))
     contato_emergencia_telefone: Mapped[str | None] = mapped_column(String(20))
@@ -180,7 +191,39 @@ class PerfilPaciente(Timestamps, Base):
     observacoes: Mapped[str | None] = mapped_column(Text)
     pontos_total: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
-    usuario: Mapped[Usuario] = relationship(back_populates="perfil_paciente", lazy="joined")
+    usuario: Mapped[Usuario] = relationship(
+        back_populates="perfil_paciente", lazy="joined", foreign_keys=[usuario_id]
+    )
+    responsavel: Mapped[Usuario | None] = relationship(
+        back_populates="dependentes", lazy="joined", foreign_keys=[responsavel_usuario_id]
+    )
+    verificacoes: Mapped[list[VerificacaoResponsavel]] = relationship(
+        back_populates="paciente", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+    __table_args__ = (
+        Index("ix_perfis_paciente_status", "status"),
+        Index("ix_perfis_paciente_responsavel", "responsavel_usuario_id"),
+    )
 
     def __repr__(self) -> str:
-        return f"<PerfilPaciente {self.usuario_id}>"
+        return f"<PerfilPaciente {self.usuario_id} {self.status}>"
+
+    @property
+    def eh_menor(self) -> bool:
+        """Menor de 18 na data de hoje."""
+        if self.data_nascimento is None:
+            return False
+        from app.core.tempo import agora_utc
+
+        hoje = agora_utc().date()
+        idade = (
+            hoje.year
+            - self.data_nascimento.year
+            - ((hoje.month, hoje.day) < (self.data_nascimento.month, self.data_nascimento.day))
+        )
+        return idade < 18
+
+    @property
+    def pode_agendar(self) -> bool:
+        return self.status is StatusPaciente.ATIVO

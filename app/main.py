@@ -63,6 +63,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
     # Falha cedo: melhor não subir do que subir inseguro.
     settings.validar_para_producao()
+    settings.validar_armazenamento()
     init_engine(settings)
     app.state.providers = montar_providers(settings)
     log.info(

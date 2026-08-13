@@ -17,6 +17,7 @@ from app.core.logging import configurar_logging, get_logger
 from app.db.sessao import fechar_engine, get_sessionmaker, init_engine
 from app.seeds.demo import semear_demo
 from app.seeds.especialidades import semear_especialidades
+from app.seeds.papeis import semear_papeis
 from app.seeds.parametros import atualizar_parametros, semear_parametros
 from app.seeds.planos import semear_planos
 from app.seeds.sintomas import semear_sintomas
@@ -37,6 +38,7 @@ async def executar(com_demo: bool, atualizar: bool = False) -> None:
             for chave, antes, depois in await atualizar_parametros(sessao, settings):
                 log.warning("seed.parametro_alterado", chave=chave, antes=antes, depois=depois)
         log.info("seed.parametros", novos=await semear_parametros(sessao, settings))
+        log.info("seed.papeis", novos=await semear_papeis(sessao))
         # Ordem importa: sintomas apontam para especialidades.
         log.info("seed.especialidades", novos=await semear_especialidades(sessao))
         sintomas, ligacoes = await semear_sintomas(sessao)

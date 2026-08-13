@@ -16,6 +16,7 @@ from app.db.mixins import Timestamps, UUIDPk
 from app.models.enums import OrigemSessaoLogin, Papel, TipoToken
 
 if TYPE_CHECKING:
+    from app.models.autorizacao import Role
     from app.models.perfil import PerfilPaciente, PerfilProfissional
 
 
@@ -35,16 +36,55 @@ class Usuario(UUIDPk, Timestamps, Base):
         String(50), nullable=False, server_default="America/Sao_Paulo"
     )
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+
+    #: Permissões administrativas. **Nulo para paciente e profissional**: as
+    #: regras deles são de domínio ("só vejo o que é meu"), não CRUD por módulo.
+    #: Ver app/models/autorizacao.py.
+    role_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT")
+    )
+
+    # --- Reservado para evolução, sem migração disruptiva depois -----------
+    twofa_secret_cifrado: Mapped[bytes | None] = mapped_column()
+    twofa_habilitado: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    openid_sub: Mapped[str | None] = mapped_column(String(255))
+    openid_provider: Mapped[str | None] = mapped_column(String(60))
     email_verificado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     telefone_verificado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ultimo_login_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    role: Mapped[Role | None] = relationship(back_populates="usuarios", lazy="selectin")
+    # passive_deletes: a PK do perfil É a FK para usuarios, e sem isto o ORM
+    # tenta "anular" a chave primária ao apagar o usuário, em vez de deixar o
+    # ON DELETE CASCADE do banco fazer o trabalho.
     perfil_profissional: Mapped[PerfilProfissional | None] = relationship(
-        back_populates="usuario", uselist=False, lazy="selectin"
+        back_populates="usuario",
+        uselist=False,
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
+    # foreign_keys explícito: PerfilPaciente tem DUAS FKs para usuarios --
+    # `usuario_id` (o próprio paciente) e `responsavel_usuario_id` (quem responde
+    # por ele, quando é menor). Sem isto o SQLAlchemy não sabe qual usar.
     perfil_paciente: Mapped[PerfilPaciente | None] = relationship(
-        back_populates="usuario", uselist=False, lazy="selectin"
+        back_populates="usuario",
+        uselist=False,
+        lazy="selectin",
+        foreign_keys="PerfilPaciente.usuario_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
+    #: Menores sob responsabilidade deste usuário (LGPD art. 14).
+    dependentes: Mapped[list[PerfilPaciente]] = relationship(
+        back_populates="responsavel",
+        lazy="selectin",
+        foreign_keys="PerfilPaciente.responsavel_usuario_id",
+        # SET NULL no banco: apagar o responsável não apaga o dependente.
+        passive_deletes=True,
+    )
+
+    __table_args__ = (Index("ix_usuarios_role", "role_id"),)
 
     def __repr__(self) -> str:
         return f"<Usuario {self.email} {self.papel}>"
@@ -52,6 +92,15 @@ class Usuario(UUIDPk, Timestamps, Base):
     @property
     def primeiro_nome(self) -> str:
         return self.nome_completo.split()[0] if self.nome_completo else ""
+
+    def permite(self, modulo: str, operacao: str) -> bool:
+        """Se este usuário pode ``operacao`` no ``modulo``.
+
+        Sem papel administrativo, não há permissão de módulo — o que **não**
+        impede paciente e profissional de usarem o produto: as rotas deles são
+        de domínio e não passam por esta checagem.
+        """
+        return self.role is not None and self.role.permite(modulo, operacao)
 
 
 class SessaoLogin(UUIDPk, Base):

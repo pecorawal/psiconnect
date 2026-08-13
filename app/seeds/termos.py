@@ -150,12 +150,53 @@ Qualquer das partes pode encerrar a relação a qualquer tempo, respeitados os
 atendimentos já agendados.
 """.strip()
 
+CONSENT_RESPONSAVEL = """
+# Consentimento do responsável legal
+
+Você está autorizando o atendimento psicológico de um **adolescente sob sua
+responsabilidade** na plataforma PsiConnect.
+
+Ao confirmar, você declara que:
+
+1. é o **pai, a mãe ou o responsável legal** pelo adolescente;
+2. **autoriza** o tratamento dos dados pessoais dele, incluindo os **dados de
+   saúde** necessários ao atendimento (Lei 13.709/2018, art. 14);
+3. está ciente de que enviará **cópia de documento de identificação** para que a
+   plataforma confirme que a autorização partiu de quem tem legitimidade.
+
+## Sobre o documento que você envia
+
+- É armazenado **criptografado**, e nem a equipe que opera a infraestrutura
+  consegue abri-lo.
+- Só **você** e um administrador autorizado podem visualizá-lo, e todo acesso
+  fica registrado.
+- Depois de conferido, **a imagem é apagada**. Permanece apenas o registro de que
+  houve verificação, com o tipo do documento e os últimos dígitos.
+
+## Sobre o sigilo do atendimento
+
+O conteúdo das sessões é protegido por **sigilo profissional**. Autorizar o
+atendimento **não** dá a você acesso ao que é falado em sessão. O profissional
+compartilhará com você o que for necessário ao acompanhamento, conforme a ética
+da profissão.
+
+## Você pode voltar atrás
+
+Este consentimento é **revogável a qualquer momento**, sem prejuízo dos
+atendimentos já realizados.
+""".strip()
+
 TERMOS: tuple[Def, ...] = (
     Def(TipoTermo.TERMOS_USO, "Termos de uso", TERMOS_USO),
     Def(TipoTermo.POLITICA_PRIVACIDADE, "Política de privacidade", POLITICA_PRIVACIDADE),
     Def(TipoTermo.CONSENT_DADOS_SAUDE, "Consentimento — dados de saúde", CONSENT_DADOS_SAUDE),
     Def(TipoTermo.CONSENT_TRANSCRICAO, "Ciência — transcrição da sessão", CONSENT_TRANSCRICAO),
     Def(TipoTermo.CONTRATO_PROFISSIONAL, "Contrato do profissional", CONTRATO_PROFISSIONAL),
+    Def(
+        TipoTermo.CONSENT_RESPONSAVEL,
+        "Consentimento do responsável legal",
+        CONSENT_RESPONSAVEL,
+    ),
 )
 
 

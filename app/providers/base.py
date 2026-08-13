@@ -186,10 +186,22 @@ class EmbeddingProvider(Protocol):
 
 @runtime_checkable
 class StorageProvider(Protocol):
+    """Object storage privado.
+
+    ``salvar`` devolve a **chave** do objeto, não uma URL: quem decide se
+    alguém pode ver o arquivo é a aplicação, no momento do acesso.
+    """
+
     nome: str
 
-    async def salvar(self, caminho: str, conteudo: bytes, content_type: str) -> str:
-        """Grava e devolve a URL pública."""
+    async def salvar(self, caminho: str, conteudo: bytes, content_type: str) -> str: ...
+
+    async def ler(self, caminho: str) -> bytes:
+        """Lê o objeto. Usado para servir arquivo cifrado por rota autorizada."""
         ...
 
     async def remover(self, caminho: str) -> None: ...
+
+    async def url_temporaria(self, caminho: str, ttl_segundos: int = 60) -> str:
+        """Link assinado de curta duração. Só para arquivo não cifrado pelo app."""
+        ...

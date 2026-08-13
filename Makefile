@@ -37,8 +37,8 @@ bootstrap: deps infra-up  ## Setup completo: venv + deps + banco + migrations + 
 	@echo "Pronto. Rode 'make dev' e abra http://localhost:$(PORTA)"
 
 # --- Infra -----------------------------------------------------------------
-infra-up:  ## Sobe Postgres+pgvector e Mailpit
-	$(COMPOSE) up -d db mailpit
+infra-up:  ## Sobe Postgres+pgvector, Mailpit e MinIO
+	$(COMPOSE) up -d db mailpit minio
 
 infra-down:  ## Derruba os containers (mantém os dados no volume pgdata)
 	$(COMPOSE) down
@@ -52,6 +52,8 @@ migrate:  ## Aplica todas as migrations
 
 nova-migration:  ## Gera uma migration. Uso: make nova-migration m="descricao"
 	$(VENV)/bin/alembic revision --autogenerate -m "$(m)"
+	$(VENV)/bin/ruff format alembic/versions/
+	@echo "Revise a migration gerada: ENUMs novos precisam de DROP TYPE no downgrade."
 
 seed:  ## Popula taxonomias, planos, parâmetros e termos
 	$(PY) -m app.seeds

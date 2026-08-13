@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.erros import NaoAutenticado, NaoAutorizado
+from app.core.permissoes import autorizar, eh_staff
 from app.core.sessao_web import obter_token_sessao
 from app.db.sessao import get_db
 from app.models import Papel, PerfilPaciente, PerfilProfissional, Usuario
@@ -113,3 +114,19 @@ async def obter_perfil_paciente(
 
 PacienteAtual = Annotated[PerfilPaciente, Depends(obter_perfil_paciente)]
 AdminAtual = Annotated[Usuario, Depends(requer_papel(Papel.ADMIN))]
+
+
+async def requer_permissao(request: Request, usuario: UsuarioAtual) -> Usuario:
+    """Aplica a política administrativa central (app/core/permissoes.py).
+
+    Montada nas rotas ``/admin``. A política vem do prefixo da rota e do método
+    HTTP, não de um decorador por endpoint — assim dá para auditar tudo lendo
+    um arquivo só.
+    """
+    if not eh_staff(usuario):
+        raise NaoAutorizado()
+    autorizar(usuario, request)
+    return usuario
+
+
+StaffAutorizado = Annotated[Usuario, Depends(requer_permissao)]
