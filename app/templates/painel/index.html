@@ -21,6 +21,33 @@
     {% endif %}
   </div>
 
+  {% if creditos %}
+  <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    Suas sessões contratadas
+  </h2>
+  <ul class="mt-4 space-y-2">
+    {% for saldo in creditos %}
+    <li class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border
+               border-teal-200 bg-teal-50 px-5 py-3">
+      <span class="text-sm text-teal-900">
+        <strong>{{ saldo.disponiveis }}</strong>
+        {{ "sessão" if saldo.disponiveis == 1 else "sessões" }}
+        com {{ saldo.profissional_nome }}
+        <span class="text-teal-700">· {{ saldo.especialidade_nome }}</span>
+        {% if saldo.expira_em %}
+        <span class="block text-xs text-teal-700">
+          Válidas até {{ saldo.expira_em | data_br }}
+        </span>
+        {% endif %}
+      </span>
+      <a href="{{ url_for('escolher_horario', profissional_id=saldo.profissional_id) }}"
+         class="rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white
+                hover:bg-teal-800">Marcar</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
     Próximas sessões
   </h2>

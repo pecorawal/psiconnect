@@ -31,6 +31,34 @@
     {% endif %}
   </div>
 
+  {% if creditos_disponiveis %}
+  {# Quem já pagou um pacote não pode ser levado a pagar de novo: a opção de
+     usar o crédito vem ANTES dos planos, e em destaque. #}
+  <div class="mt-8 rounded-2xl border-2 border-teal-600 bg-white p-5">
+    <p class="font-semibold text-slate-900">
+      Você tem {{ creditos_disponiveis }}
+      {{ "sessão disponível" if creditos_disponiveis == 1 else "sessões disponíveis" }}
+      com {{ agendamento.profissional.nome_exibicao }}
+    </p>
+    <p class="mt-1 text-sm text-slate-600">
+      Use uma delas para marcar esta consulta, sem pagar nada agora.
+      {% if creditos_expiram_em %}
+      Vencem em {{ creditos_expiram_em | data_br }}.
+      {% endif %}
+    </p>
+    <form method="post" action="/paciente/checkout/{{ agendamento.id }}/credito" class="mt-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit"
+              class="w-full rounded-xl bg-teal-700 px-5 py-3 font-medium text-white
+                     hover:bg-teal-800">
+        Usar uma sessão do meu pacote
+      </button>
+    </form>
+  </div>
+
+  <p class="mt-8 text-center text-sm text-slate-500">ou compre um novo plano</p>
+  {% endif %}
+
   <form method="post" action="/paciente/checkout/{{ agendamento.id }}" class="mt-8 space-y-8">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 

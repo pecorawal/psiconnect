@@ -133,3 +133,10 @@ async def marcar_no_show(sessao: AsyncSession, parametros: ParametrosService) ->
     if marcadas:
         log.info("worker.no_show_marcados", quantidade=marcadas)
     return marcadas
+
+
+async def expirar_creditos(sessao: AsyncSession) -> int:
+    """Marca créditos vencidos. Ver `CreditoService.expirar_vencidos`."""
+    from app.services.credito_service import CreditoService
+
+    return await CreditoService(sessao).expirar_vencidos()

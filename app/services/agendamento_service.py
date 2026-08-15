@@ -181,6 +181,18 @@ class AgendamentoService:
         agendamento.cancelado_por_id = por_id
         agendamento.motivo_cancelamento = motivo
         await self.sessao.flush()
+
+        # Devolve o crédito ao pacote. Sem isto, cancelar uma sessão de um
+        # pacote de 10 queimaria o crédito -- o paciente pagaria por uma sessão
+        # que não aconteceu.
+        #
+        # NOTA: devolve sempre, sem olhar antecedência. A política de
+        # cancelamento (quantas horas antes é gratuito) é questão aberta em
+        # docs/05-roadmap.md; até haver decisão, o benefício da dúvida fica com
+        # quem pagou.
+        from app.services.credito_service import CreditoService
+
+        await CreditoService(self.sessao).devolver(agendamento.id)
         return agendamento
 
     async def expirar_reservas_vencidas(self) -> int:

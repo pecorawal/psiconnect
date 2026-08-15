@@ -10,6 +10,7 @@ from app.core.deps import DbSession, UsuarioAtual
 from app.core.templating import responder
 from app.core.tempo import agora_utc
 from app.models import Agendamento, Papel, Sessao, StatusAgendamento
+from app.services.credito_service import CreditoService
 
 router = APIRouter(tags=["painel"])
 
@@ -68,6 +69,11 @@ def montar(templates: Jinja2Templates) -> APIRouter:
                 "proximos": proximos,
                 "realizados": realizados,
                 "sessoes": sessoes,
+                # Saldo de pacote: sem isto o paciente não sabe que já tem
+                # sessões pagas e acaba comprando de novo.
+                "creditos": (
+                    [] if eh_profissional else await CreditoService(sessao).saldo(usuario.id)
+                ),
                 "agora": agora_utc(),
             },
         )

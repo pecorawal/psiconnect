@@ -63,6 +63,46 @@ class CheckoutService:
         self.parametros = parametros
         self.pagamentos = pagamentos
 
+    async def usar_credito(
+        self, *, paciente: PerfilPaciente, agendamento_id: uuid.UUID
+    ) -> Agendamento:
+        """Confirma a sessão gastando um crédito já comprado.
+
+        É o caminho que faltava para os pacotes de 5 e 10 sessões terem sentido:
+        sem ele, só a primeira sessão do pacote era marcável.
+
+        Não passa por provedor de pagamento nenhum -- o dinheiro já entrou na
+        compra original, e cobrar de novo seria cobrar duas vezes pela mesma
+        sessão.
+        """
+        agendamento = await self.sessao.get(Agendamento, agendamento_id)
+        if agendamento is None or agendamento.paciente_id != paciente.usuario_id:
+            # 404 e não 403: não confirmamos a existência do agendamento alheio.
+            raise NaoEncontrado("Agendamento não encontrado.")
+
+        if agendamento.status is StatusAgendamento.CONFIRMADO:
+            # Duplo clique ou reenvio: já está feito.
+            return agendamento
+
+        if agendamento.status is not StatusAgendamento.PENDENTE_PAGAMENTO:
+            if agendamento.status is StatusAgendamento.EXPIRADO:
+                raise ReservaExpirada()
+            raise NaoEncontrado("Este agendamento não está aguardando pagamento.")
+
+        if agendamento.reserva_expira_em and agendamento.reserva_expira_em < agora_utc():
+            raise ReservaExpirada()
+
+        from app.services.credito_service import CreditoService
+
+        await CreditoService(self.sessao).consumir(agendamento)
+
+        servico = AgendamentoService(self.sessao, self.parametros)
+        await servico.confirmar(agendamento.id)
+        await NotificacaoService(self.sessao).notificar_agendamento_confirmado(agendamento)
+
+        log.info("checkout.credito_usado", agendamento_id=str(agendamento.id))
+        return agendamento
+
     async def listar_planos(self) -> list[Plano]:
         return list(
             (

@@ -47,7 +47,14 @@ async def ciclo() -> dict[str, int]:
     settings = get_settings()
     providers = montar_providers(settings)
     fabrica = get_sessionmaker()
-    resultado = {"salas": 0, "expiradas": 0, "no_show": 0, "enviadas": 0, "falhas": 0}
+    resultado = {
+        "salas": 0,
+        "expiradas": 0,
+        "no_show": 0,
+        "creditos": 0,
+        "enviadas": 0,
+        "falhas": 0,
+    }
 
     async with fabrica() as sessao:
         parametros = ParametrosService(sessao, settings)
@@ -65,11 +72,13 @@ async def ciclo() -> dict[str, int]:
                         resultado[nome] = await agenda.expirar_reservas(sessao, parametros)
                     elif nome == "no_show":
                         resultado[nome] = await agenda.marcar_no_show(sessao, parametros)
+                    elif nome == "creditos":
+                        resultado[nome] = await agenda.expirar_creditos(sessao)
             except Exception:
                 await sessao.rollback()
                 log.exception("worker.tarefa_falhou", tarefa=nome)
 
-        for nome in ("salas", "expiradas", "no_show"):
+        for nome in ("salas", "expiradas", "no_show", "creditos"):
             await _rodar(nome)
 
         try:

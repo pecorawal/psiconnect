@@ -19,6 +19,7 @@ from app.models import MetodoPagamento, SlugPlano
 from app.services.agendamento_service import AgendamentoService, PedidoReserva
 from app.services.avaliacao_service import AvaliacaoService
 from app.services.checkout_service import CheckoutService
+from app.services.credito_service import CreditoService
 from app.services.disponibilidade_service import DisponibilidadeService
 from app.services.matching_service import MatchingService
 from app.services.parametros_service import ParametrosService
@@ -202,6 +203,20 @@ def montar(templates: Jinja2Templates) -> APIRouter:
             raise NaoEncontrado("Agendamento não encontrado.")
 
         servico = CheckoutService(sessao, ParametrosService(sessao, settings), providers.pagamento)
+
+        # Se o paciente já tem crédito com este profissional, a tela precisa
+        # oferecer isso antes de qualquer plano -- senão ele paga duas vezes
+        # pela mesma sessão sem perceber.
+        creditos = CreditoService(sessao)
+        saldos = [
+            s
+            for s in await creditos.saldo(paciente.usuario_id)
+            if s.profissional_id == agendamento.profissional_id
+            and s.especialidade_id == agendamento.especialidade_id
+        ]
+        disponiveis = sum(s.disponiveis for s in saldos)
+        expira_em = min((s.expira_em for s in saldos if s.expira_em), default=None)
+
         return responder(
             request,
             templates,
@@ -211,8 +226,25 @@ def montar(templates: Jinja2Templates) -> APIRouter:
                 "agendamento": agendamento,
                 "planos": await servico.listar_planos(),
                 "metodos": list(MetodoPagamento),
+                "creditos_disponiveis": disponiveis,
+                "creditos_expiram_em": expira_em,
             },
         )
+
+    @router.post("/checkout/{agendamento_id}/credito")
+    async def usar_credito(
+        request: Request,
+        paciente: PacienteAtual,
+        sessao: DbSession,
+        settings: Config,
+        providers: ProvidersAtuais,
+        agendamento_id: uuid.UUID,
+    ) -> Response:
+        """Confirma a sessão gastando um crédito do pacote, sem cobrar nada."""
+        servico = CheckoutService(sessao, ParametrosService(sessao, settings), providers.pagamento)
+        async with UnitOfWork(sessao):
+            await servico.usar_credito(paciente=paciente, agendamento_id=agendamento_id)
+        return RedirectResponse("/painel", status_code=303)
 
     @router.post("/checkout/{agendamento_id}")
     async def pagar(
