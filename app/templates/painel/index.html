@@ -6,9 +6,14 @@
   <div class="flex flex-wrap items-baseline justify-between gap-3">
     <h1 class="text-2xl font-bold text-slate-900">Olá, {{ usuario.primeiro_nome }}</h1>
     {% if eh_profissional %}
-    <a href="{{ url_for('agenda_profissional') }}" class="text-sm text-teal-700 hover:underline">
-      Editar minha agenda
-    </a>
+    <span class="flex flex-wrap gap-4 text-sm">
+      <a href="{{ url_for('agenda_profissional') }}" class="text-teal-700 hover:underline">
+        Editar minha agenda
+      </a>
+      <a href="{{ url_for('financeiro') }}" class="text-teal-700 hover:underline">
+        Meus recebimentos
+      </a>
+    </span>
     {% else %}
     <span class="flex flex-wrap gap-4 text-sm">
       <a href="{{ url_for('sintomas') }}" class="text-teal-700 hover:underline">

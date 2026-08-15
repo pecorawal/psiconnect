@@ -19,10 +19,11 @@ from app.core.deps import (
 from app.core.dinheiro import reais_para_centavos
 from app.core.erros import ErroDominio
 from app.core.templating import responder
-from app.core.tempo import parse_hhmm
+from app.core.tempo import agora_utc, para_local, parse_hhmm
 from app.db.sessao import UnitOfWork
 from app.models import Conselho, MetodoPagamento
 from app.services.disponibilidade_service import DisponibilidadeService
+from app.services.financeiro_service import FinanceiroService
 from app.services.parametros_service import ParametrosService
 from app.services.perfil_service import DadosPerfil, PerfilProfissionalService
 from app.services.regras.precificacao import TabelaTaxas, simular_todos_metodos
@@ -176,6 +177,44 @@ def montar(templates: Jinja2Templates) -> APIRouter:
                 "bruto": bruto,
                 "simulacao": simulacao,
                 "metodos": list(MetodoPagamento),
+            },
+        )
+
+    @router.get("/financeiro", name="financeiro")
+    async def financeiro(
+        request: Request,
+        perfil: ProfissionalAtual,
+        sessao: DbSession,
+        periodo: str | None = None,
+    ) -> Response:
+        """Extrato do mês. `periodo` no formato ``AAAA-MM``."""
+        servico = FinanceiroService(sessao)
+        hoje = para_local(agora_utc())
+
+        ano, mes = hoje.year, hoje.month
+        if periodo:
+            try:
+                ano, mes = (int(parte) for parte in periodo.split("-", 1))
+                if not 1 <= mes <= 12:
+                    ano, mes = hoje.year, hoje.month
+            except ValueError:
+                # Período inválido na URL cai no mês atual em vez de estourar:
+                # é parâmetro de navegação, não entrada de formulário.
+                ano, mes = hoje.year, hoje.month
+
+        return responder(
+            request,
+            templates,
+            template_completo="profissional/financeiro.html",
+            template_parcial="partials/financeiro_extrato.html",
+            contexto={
+                "titulo": "Seus recebimentos",
+                "resumo": await servico.resumo(perfil.usuario_id, ano=ano, mes=mes),
+                "movimentos": await servico.movimentos(perfil.usuario_id, ano=ano, mes=mes),
+                "meses": await servico.meses_com_movimento(perfil.usuario_id),
+                "ano": ano,
+                "mes": mes,
+                "periodo": f"{ano:04d}-{mes:02d}",
             },
         )
 

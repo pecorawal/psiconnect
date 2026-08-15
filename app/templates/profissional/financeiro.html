@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Seus recebimentos{% endblock %}
+
+{% set nomes_mes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
+                    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"] %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-4xl px-4 py-12">
+  <div class="flex flex-wrap items-baseline justify-between gap-3">
+    <h1 class="text-2xl font-bold text-slate-900">Seus recebimentos</h1>
+    <a href="{{ url_for('simulador') }}" class="text-sm text-teal-700 hover:underline">
+      Simular um preço
+    </a>
+  </div>
+
+  {% if not resumo.split_ativo %}
+  {# Enquanto a conta do Mercado Pago não está conectada não há split: o
+     dinheiro cai na conta da plataforma. Os cálculos abaixo continuam certos,
+     mas a liquidação não é a descrita -- dizer isso é obrigação, não cortesia. #}
+  <div class="mt-6 rounded-2xl border border-amber-300 bg-amber-50 p-5">
+    <p class="text-sm text-amber-900">
+      <strong>Sua conta do Mercado Pago ainda não está conectada.</strong>
+      Enquanto isso, os valores abaixo mostram o cálculo correto, mas o
+      repasse automático não acontece. Conecte sua conta para receber
+      diretamente, sem intermediação.
+    </p>
+  </div>
+  {% endif %}
+
+  <form hx-get="{{ url_for('financeiro') }}"
+        hx-target="#extrato"
+        hx-swap="outerHTML"
+        hx-trigger="change"
+        class="mt-6 flex items-center gap-3">
+    <label for="periodo" class="text-sm text-slate-600">Período</label>
+    <select id="periodo" name="periodo"
+            class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm
+                   focus:border-teal-600 focus:outline-none focus:ring-1 focus:ring-teal-600">
+      {% for a, m in meses %}
+      <option value="{{ '%04d-%02d' % (a, m) }}"
+              {% if a == ano and m == mes %}selected {% endif %}>
+        {{ nomes_mes[m - 1] }} de {{ a }}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="mt-6">
+    {% include "partials/financeiro_extrato.html" %}
+  </div>
+
+  <p class="mt-10 text-xs leading-relaxed text-slate-500">
+    O pagamento do paciente entra direto na sua conta do Mercado Pago, já com a
+    comissão descontada — a plataforma não retém nem repassa valores. O prazo de
+    liberação é o do Mercado Pago e pode variar conforme o meio de pagamento.
+    Esta tela é um extrato para conferência, não um documento fiscal.
+  </p>
+</section>
+{% endblock %}

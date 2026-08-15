@@ -97,6 +97,18 @@ def limites_do_dia_local(dia: date, tz: ZoneInfo = TZ_BR) -> tuple[datetime, dat
     return combinar_local(dia, 0, tz), combinar_local(dia + timedelta(days=1), 0, tz)
 
 
+def limites_do_mes_local(ano: int, mes: int, tz: ZoneInfo = TZ_BR) -> tuple[datetime, datetime]:
+    """Intervalo UTC semiaberto ``[inicio, fim)`` que cobre um mês local.
+
+    Semiaberto, e não ``BETWEEN`` com o último instante do mês: o fim do mês em
+    UTC cai no meio da madrugada seguinte no horário local, e um ``<=`` ali
+    incluiria ou perderia lançamentos da virada conforme o fuso.
+    """
+    inicio = combinar_local(date(ano, mes, 1), 0, tz)
+    proximo = date(ano + 1, 1, 1) if mes == 12 else date(ano, mes + 1, 1)
+    return inicio, combinar_local(proximo, 0, tz)
+
+
 def semana_iso(dt: datetime, tz: ZoneInfo = TZ_BR) -> tuple[int, int]:
     """``(ano_iso, numero_da_semana)`` no fuso local.
 

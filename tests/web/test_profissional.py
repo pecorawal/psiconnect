@@ -226,3 +226,61 @@ class TestValidacaoAmigavel:
         assert r.status_code == 422
         assert "Preencha corretamente" in r.text
         assert '"type":"missing"' not in r.text
+
+
+class TestFinanceiro:
+    """Extrato de recebimentos: acesso e conteúdo."""
+
+    async def test_paciente_nao_acessa(
+        self, app: FastAPI, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        """Faturamento é dado comercial: paciente não tem o que ver aqui."""
+        paciente = await f.criar_paciente(sessao)
+        await sessao.commit()
+
+        async with cliente(app) as c:
+            await logar(c, app, sessao, settings, paciente.usuario_id)
+            resposta = await c.get("/profissional/financeiro")
+
+        assert resposta.status_code in (302, 303, 403, 404)
+
+    async def test_profissional_ve_o_proprio_extrato(
+        self, app: FastAPI, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        profissional = await f.criar_profissional(sessao)
+        await sessao.commit()
+
+        async with cliente(app) as c:
+            await logar(c, app, sessao, settings, profissional.usuario_id)
+            resposta = await c.get("/profissional/financeiro")
+
+        assert resposta.status_code == 200
+        pagina = BeautifulSoup(resposta.text, "html.parser")
+        assert "recebimentos" in pagina.get_text().lower()
+
+    async def test_avisa_que_a_conta_nao_esta_conectada(
+        self, app: FastAPI, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        """Sem OAuth não há split; omitir isso faria a tela mentir."""
+        profissional = await f.criar_profissional(sessao)
+        assert profissional.mp_user_id is None
+        await sessao.commit()
+
+        async with cliente(app) as c:
+            await logar(c, app, sessao, settings, profissional.usuario_id)
+            resposta = await c.get("/profissional/financeiro")
+
+        assert "não está conectada" in resposta.text
+
+    async def test_periodo_invalido_cai_no_mes_atual(
+        self, app: FastAPI, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        """`periodo` é navegação, não formulário: não pode estourar 500."""
+        profissional = await f.criar_profissional(sessao)
+        await sessao.commit()
+
+        async with cliente(app) as c:
+            await logar(c, app, sessao, settings, profissional.usuario_id)
+            for ruim in ("abacaxi", "2026-99", "", "2026", "-1--5"):
+                resposta = await c.get(f"/profissional/financeiro?periodo={ruim}")
+                assert resposta.status_code == 200, f"quebrou com periodo={ruim!r}"
