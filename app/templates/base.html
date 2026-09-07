@@ -10,10 +10,21 @@
   <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
   <link rel="icon" href="{{ url_for('static', path='img/favicon.svg') }}" type="image/svg+xml">
 
+  {# PWA. O manifesto sai de /manifest.webmanifest (e não de /static) porque
+     precisa do Content-Type próprio; o iOS ignora o manifesto e quer as metas
+     e o PNG abaixo. #}
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/apple-touch-icon.png') }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="{{ app_nome }}">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
   {# HTMX vendorizado: nada de CDN. Uma CSP restrita bloquearia, e carregar
      script de terceiro numa página com dado clínico é risco desnecessário. #}
   <script src="{{ url_for('static', path='vendor/htmx.min.js') }}" defer></script>
   <script src="{{ url_for('static', path='js/htmx-config.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/pwa.js') }}" defer></script>
   {% block head_extra %}{% endblock %}
 </head>
 {# data-csrf é lido por htmx-config.js e devolvido no header X-CSRF-Token em

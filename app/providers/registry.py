@@ -48,9 +48,7 @@ def _pagamento(settings: Settings) -> PaymentProvider:
         # Falhar aqui, no boot, é melhor do que falhar no primeiro checkout: o
         # erro aparece para quem está subindo a aplicação, não para o paciente.
         if not settings.mercadopago_access_token:
-            raise ProviderIndisponivel(
-                "MERCADOPAGO_ACCESS_TOKEN não configurado."
-            )
+            raise ProviderIndisponivel("MERCADOPAGO_ACCESS_TOKEN não configurado.")
         if not settings.mercadopago_webhook_secret:
             raise ProviderIndisponivel(
                 "MERCADOPAGO_WEBHOOK_SECRET não configurado — sem ele o webhook "
@@ -65,7 +63,19 @@ def _pagamento(settings: Settings) -> PaymentProvider:
 def _video(settings: Settings) -> VideoProvider:
     if settings.video_provider == "fake":
         return FakeVideoProvider(settings)
-    # DailyVideoProvider chega na Fase 4.
+    if settings.video_provider == "daily":
+        from app.providers.video.daily import DailyVideoProvider
+
+        # Mesmo critério do pagamento: falhar no boot é melhor do que falhar na
+        # primeira sessão -- o erro aparece para quem sobe a aplicação, não para
+        # o paciente que já está esperando na tela.
+        if not settings.daily_api_key:
+            raise ProviderIndisponivel("DAILY_API_KEY não configurado.")
+        if not settings.daily_domain:
+            raise ProviderIndisponivel(
+                "DAILY_DOMAIN não configurado — sem ele a URL da sala fica inválida."
+            )
+        return DailyVideoProvider(settings)
     raise ProviderIndisponivel(
         f"Provedor de vídeo '{settings.video_provider}' ainda não implementado."
     )

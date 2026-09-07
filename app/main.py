@@ -37,6 +37,7 @@ from app.web.rotas import (
     painel,
     profissional,
     publico,
+    pwa,
     responsavel,
 )
 from app.web.rotas import sessao as rotas_sessao
@@ -248,6 +249,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     contexto_usuario = [Depends(obter_usuario_opcional)]
 
     app.include_router(publico.montar(templates), dependencies=contexto_usuario)
+    # PWA fica fora de `contexto_usuario`: manifesto, service worker e página
+    # offline são iguais para todo mundo e não devem custar uma consulta.
+    app.include_router(pwa.montar(templates))
     app.include_router(auth.montar(templates), dependencies=contexto_usuario)
     app.include_router(profissional.montar(templates), dependencies=contexto_usuario)
     app.include_router(paciente.montar(templates), dependencies=contexto_usuario)

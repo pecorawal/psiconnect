@@ -220,8 +220,16 @@ class SessaoService:
         return sessao
 
     async def token_de_entrada(self, sessao: Sessao, usuario: Usuario) -> str:
-        """Token de curta duração, emitido na hora. Nunca persistido."""
+        """Token de curta duração, emitido na hora. Nunca persistido.
+
+        **Paciente não admitido não recebe token.** Sem esta linha, a admissão
+        do profissional seria só um detalhe da tela do lobby: bastaria digitar
+        /sessao/<id>/sala para entrar na chamada. Com provedor fake isso não
+        tinha efeito visível; com sala de verdade, é entrar sem ser chamado.
+        """
         eh_dono = usuario.id == sessao.agendamento.profissional_id
+        if not eh_dono and sessao.paciente_admitido_em is None:
+            raise SessaoNaoDisponivel("Aguarde o profissional admitir você na sala.")
         return await self.video.emitir_token(
             sessao.sala_nome or "",
             Participante(id=str(usuario.id), nome=usuario.primeiro_nome, eh_dono=eh_dono),

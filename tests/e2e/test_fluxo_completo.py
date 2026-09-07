@@ -10,8 +10,10 @@ fazer o que promete.
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 
 import pytest
+from bs4 import BeautifulSoup
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
@@ -284,7 +286,13 @@ class TestFluxoCompleto:
 
             r = await pac.get(f"/sessao/{agendamento_id}/sala")
             assert r.status_code == 200
-            assert "sala-simulada" in r.text  # provider fake, fluxo real
+            # O iframe precisa apontar para uma rota que existe: conferir só a
+            # string deixaria passar um caminho quebrado (e deixou, até a Fase 4).
+            iframe = BeautifulSoup(r.text, "html.parser").select_one("iframe")
+            assert iframe is not None
+            caminho = urlparse(str(iframe["src"])).path
+            assert caminho == f"/sessao/simulada/{sessao_atendimento.sala_nome}"
+            assert (await pac.get(caminho)).status_code == 200
 
             # 16. O profissional encerra
             r = await psi.post(f"/sessao/{agendamento_id}/encerrar", headers=headers)

@@ -4,9 +4,13 @@ Plataforma de conexão entre psicólogos e pacientes: um ecossistema digital que
 facilita o encontro entre profissionais de psicologia e pessoas que buscam
 acompanhamento terapêutico — com sigilo, do computador, do tablet ou do celular.
 
-> **Status:** Fases 0 e 1 concluídas — o fluxo completo funciona ponta a ponta,
-> com pagamento, vídeo e notificações simulados. O roadmap está em
-> [`docs/05-roadmap.md`](docs/05-roadmap.md).
+> **Status:** Fases 0 e 1 concluídas — o fluxo completo funciona ponta a ponta.
+> A Fase 2 saiu pela metade: adaptador do Mercado Pago, webhook, pacotes de
+> crédito e painel financeiro estão prontos, mas tudo que depende de credencial
+> real do Mercado Pago/Mercado Livre está **no backlog**. A Fase 4 está em
+> andamento: sala de espera em tempo real, PWA instalável e o adaptador do
+> daily.co já escrito, à espera de uma conta.
+> O roadmap está em [`docs/05-roadmap.md`](docs/05-roadmap.md).
 
 ## Como funciona
 
@@ -30,7 +34,8 @@ especialidades com faixa de preço, e uma agenda semanal de disponibilidade.
 | Auth | Cookie de sessão httpOnly | Revogação imediata, imune a XSS ([ADR 0002](docs/adr/0002-sessao-cookie-vs-jwt.md)) |
 | Senhas | `pwdlib` / Argon2id | `passlib` está quebrado com bcrypt ≥ 4.1 ([ADR 0007](docs/adr/0007-pwdlib-argon2.md)) |
 | Pagamento | Mercado Pago (split) | O dinheiro não transita pela plataforma ([ADR 0004](docs/adr/0004-mercado-pago-split.md)) |
-| Vídeo | daily.co | Atrás de uma porta trocável |
+| Vídeo | daily.co | Salas privadas e meeting tokens, atrás de uma porta trocável |
+| App móvel | PWA | Instala pela web, sem segunda base de código; **nada de clínico vai para o cache** ([ADR 0012](docs/adr/0012-pwa-sem-cache-de-dado-clinico.md)) |
 | Arquivos | MinIO (S3) | Bucket privado; link temporário ou stream cifrado conforme a sensibilidade ([ADR 0008](docs/adr/0008-minio-links-temporarios.md)) |
 | Autorização | `Role` + `RolePermission` | Papéis criados pelo admin, CRUD por módulo ([ADR 0009](docs/adr/0009-papeis-e-permissoes.md)) |
 

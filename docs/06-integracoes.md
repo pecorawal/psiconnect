@@ -28,7 +28,27 @@ de fixtures gravadas). É o que garante que o fake não está mentindo.
 - Salas privadas; *meeting tokens* emitidos sob demanda com TTL curto, nunca
   persistidos. O profissional entra como *owner* e controla a admissão.
 - Sala criada em T-20min pelo worker; `sala_expira_em = fim + 30min`.
-- SDK **vendorizado** em `app/static/vendor/`, nunca via CDN.
+
+**Implementado** em `app/providers/video/daily.py` (Fase 4), à espera de conta:
+basta `VIDEO_PROVIDER=daily`, `DAILY_API_KEY` e `DAILY_DOMAIN`. Sem as duas
+últimas a aplicação **não sobe** — falhar no boot é melhor do que falhar com o
+paciente já na tela. A suíte `tests/contratos/test_video.py` roda contra o fake e
+contra o real (com `respx`) sem tocar a rede.
+
+Detalhes que o adaptador fixa, e por quê:
+
+| Propriedade | Valor | Motivo |
+|---|---|---|
+| `privacy` | `private` | sala aberta é sala que qualquer um acha |
+| `exp` + `eject_at_room_exp` | fim + 30 min | sem o segundo, a sala fica de pé depois de expirar |
+| `enable_knocking` | ligado | segunda barreira; a primeira é nossa, no lobby |
+| `enable_chat` | desligado | o que se escreve nele escapa do consentimento de transcrição |
+| gravação | nunca pedida | [ADR 0003](adr/0003-sem-gravacao-apenas-transcricao.md) — a API só grava se pedirmos |
+| `is_owner` | só o profissional | é ele que controla a chamada |
+
+A entrada usa a **UI *prebuilt*** por iframe (`?t=<token>`), que já traz grade de
+vídeo, reconexão e seleção de dispositivo. Vendorizar o SDK em
+`app/static/vendor/` só se passarmos a precisar de uma sala com layout próprio.
 
 ### Economia — atenção
 

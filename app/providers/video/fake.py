@@ -29,7 +29,9 @@ class FakeVideoProvider:
     async def criar_sala(self, nome: str, expira_em: datetime, *, privada: bool = True) -> Sala:
         sala = Sala(
             nome=nome,
-            url=f"{self._settings.app_base_url}/sala-simulada/{nome}",
+            # Precisa bater com a rota real: o iframe da sala aponta para cá,
+            # e um caminho errado só aparece como quadro em branco.
+            url=f"{self._settings.app_base_url}/sessao/simulada/{nome}",
             expira_em=expira_em,
             provedor_sala_id=f"fake-sala-{secrets.token_hex(6)}",
         )
@@ -50,3 +52,7 @@ class FakeVideoProvider:
     async def encerrar_sala(self, nome: str) -> None:
         self._salas.pop(nome, None)
         self._admitidos.pop(nome, None)
+
+    def url_de_entrada(self, sala_url: str, token: str) -> str:
+        separador = "&" if "?" in sala_url else "?"
+        return f"{sala_url}{separador}token={token}"

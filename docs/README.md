@@ -25,6 +25,8 @@
 | [0008](adr/0008-minio-links-temporarios.md) | MinIO com estratégia por sensibilidade do arquivo |
 | [0009](adr/0009-papeis-e-permissoes.md) | Papéis e permissões no esquema do Pectec Nexos |
 | [0010](adr/0010-cadastro-de-menores.md) | Adolescentes com consentimento do responsável |
+| [0011](adr/0011-sse-no-lobby.md) | SSE na sala de espera, polling como plano B |
+| [0012](adr/0012-pwa-sem-cache-de-dado-clinico.md) | PWA que instala, mas não cacheia dado clínico |
 
 ## Assets
 

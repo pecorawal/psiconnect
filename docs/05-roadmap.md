@@ -71,12 +71,21 @@ A comissão padrão passou de 5% para **12%**
 
 ---
 
-## Fase 2 — Pagamentos reais e planos (~2 semanas)
+## Fase 2 — Pagamentos reais e planos ⏸ parcial, resto no backlog
 
-`MercadoPagoPaymentProvider` (Pix com QR e copia-e-cola, crédito, débito), OAuth
-do profissional, `application_fee` = comissão, webhook idempotente com validação
-de assinatura, planos de 5 e 10 sessões com expiração de créditos, estorno,
-`RegraComissao` com override, `/profissional/simulador`, painel financeiro.
+**Entregue** (commits `09339e5`, `408d731`, `56dfb07`):
+
+- `MercadoPagoPaymentProvider` — Pix com QR e copia-e-cola, crédito e débito,
+  `application_fee` = comissão, idempotência na criação da cobrança.
+- Webhook `/webhooks/mercadopago` idempotente, com validação de assinatura e a
+  tabela `EventoWebhook`.
+- Pacotes de 5 e 10 sessões utilizáveis ponta a ponta: `CreditoService` (saldo,
+  consumo, devolução, expiração pelo worker), checkout e painel do paciente.
+- Painel financeiro do profissional: resumo, extrato por mês e próximas sessões
+  pagas. O `/profissional/simulador` já tinha saído na Fase 1.
+
+**Parado:** o que falta depende de conta e credenciais reais do Mercado
+Pago/Mercado Livre e foi movido para o [backlog](#backlog--mercado-pago--mercado-livre-parado).
 
 ---
 
@@ -90,12 +99,32 @@ T-24h e T-1h, e as telas de pontos.
 
 ---
 
-## Fase 4 — daily.co real, sala e PWA (~1,5 semana)
+## Fase 4 — daily.co real, sala e PWA ⏳ em andamento
 
-Salas privadas com meeting tokens (o profissional é *owner* e controla a
-admissão), SDK vendorizado, grade de vídeo responsiva, reconexão, SSE no lugar do
-polling do lobby, `manifest.webmanifest` + service worker (app shell; **jamais**
-cachear rota com dado clínico), instalação como app.
+**Entregue:**
+
+- **SSE no lobby** ([ADR 0011](adr/0011-sse-no-lobby.md)): `GET /sessao/{id}/eventos`
+  no lugar do polling de 2 s, que fica como plano B para navegador sem
+  `EventSource` e para stream que cai. A conexão de banco volta ao pool entre as
+  leituras, e evento só sai quando o HTML muda.
+- **PWA** ([ADR 0012](adr/0012-pwa-sem-cache-de-dado-clinico.md)): manifesto,
+  service worker em `/sw.js`, ícones (incl. *maskable*), página offline e botão
+  de instalar. O cache guarda **só o app shell** — a regra é verificada por teste
+  que lê o próprio `sw.js`.
+- **`DailyVideoProvider`**: salas privadas, `exp` + `eject_at_room_exp`, meeting
+  tokens com `is_owner` só para o profissional, chat desligado e gravação nunca
+  pedida ([ADR 0003](adr/0003-sem-gravacao-apenas-transcricao.md)). Coberto pela
+  suíte de contrato `tests/contratos/test_video.py`, que roda contra o fake e
+  contra o real com `respx` — sem tocar a rede.
+- **Admissão virou regra de servidor**: paciente sem `paciente_admitido_em` não
+  recebe meeting token. Antes, digitar `/sessao/{id}/sala` entrava na chamada
+  sem passar pelo lobby — inofensivo com o provider fake, grave com sala real.
+- Correção: o iframe da sala simulada apontava para uma rota inexistente.
+
+**Falta:** ligar uma conta no daily.co (`DAILY_API_KEY` + `DAILY_DOMAIN`) e
+homologar em sandbox; instrumentar minutos consumidos (ver a nota de custo em
+[06-integracoes.md](06-integracoes.md)); avaliar se a UI *prebuilt* basta ou se
+vale vendorizar o SDK para uma grade de vídeo própria.
 
 ---
 
@@ -128,6 +157,28 @@ pela interface e a consulta à trilha de auditoria.
 Fluxo de direitos do titular, retenção e anonimização, RIPD, canal do DPO, CSP
 restrita, rate limiting geral, backups cifrados **com teste de restore**,
 observabilidade, pgBouncer, deploy, runbook, teste de carga.
+
+---
+
+## Backlog — Mercado Pago / Mercado Livre (parado)
+
+Tudo que exige conta de marketplace, credencial de produção ou homologação no
+Mercado Pago/Mercado Livre fica aqui até haver decisão comercial. O código já
+escrito permanece no repositório, coberto pelos testes de contrato — nada
+precisa ser revertido, e com o provedor `fake` o fluxo inteiro roda sem
+nenhuma conta de terceiro.
+
+| # | Item | Por que está parado |
+|---|---|---|
+| B1 | OAuth do profissional (autorizar a plataforma na conta dele) | Exige aplicação aprovada no painel do MP |
+| B2 | Estorno ponta a ponta: cancelamento → `estornar()` → devolução de crédito | Depende de B1 e da decisão de negócio nº 3 |
+| B3 | `RegraComissao` com override por profissional ou plano | Só faz sentido com split real |
+| B4 | Homologação em sandbox e teste da assinatura de webhook contra o MP | Precisa de credenciais |
+| B5 | Conciliação de repasses e relatório de saldo liberado | Depende de B1 |
+| B6 | Checkout Pro / Mercado Livre como canal alternativo de venda | Nunca avaliado |
+
+Com a Fase 2 parada, as fases 3, 4 e 5 seguem sem nenhuma dependência de
+pagamento; a Fase 6 (nota fiscal e repasses) fica bloqueada junto.
 
 ---
 

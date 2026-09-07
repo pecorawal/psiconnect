@@ -55,14 +55,18 @@
   </div>
   {% endif %}
 
-  {# O provedor de vídeo entra aqui. Com VIDEO_PROVIDER=fake, sala_url aponta
-     para a sala simulada da própria aplicação; com daily.co (Fase 4), para a
-     sala real. O resto da página não muda. #}
+  {# O provedor de vídeo entra aqui. Com VIDEO_PROVIDER=fake a URL aponta para a
+     sala simulada da própria aplicação; com daily.co, para a sala real -- e é o
+     provedor que monta o parâmetro do token. O resto da página não muda.
+
+     A altura acompanha a tela no celular (`min-h`) mas nunca passa do 16:9 no
+     desktop, senão o vídeo estica e sobra faixa preta. #}
   <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
-    <iframe src="{{ sessao.sala_url }}?token={{ token }}"
+    <iframe src="{{ url_sala }}"
             title="Sala de vídeo"
             allow="camera; microphone; fullscreen; display-capture; autoplay"
-            class="aspect-video w-full"></iframe>
+            allowfullscreen
+            class="aspect-video max-h-[70vh] min-h-[60vh] w-full sm:min-h-0"></iframe>
   </div>
 
   <p class="mt-4 text-xs text-slate-500">

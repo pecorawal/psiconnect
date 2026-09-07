@@ -119,6 +119,15 @@ class VideoProvider(Protocol):
 
     async def encerrar_sala(self, nome: str) -> None: ...
 
+    def url_de_entrada(self, sala_url: str, token: str) -> str:
+        """URL final do iframe, com o token no parâmetro que o provedor espera.
+
+        Cada um usa o seu -- o daily.co lê ``t``. Deixar isso no template
+        significaria um parâmetro errado sendo ignorado em silêncio, e o
+        participante caindo numa tela de "sala privada" sem explicação.
+        """
+        ...
+
 
 # ---------------------------------------------------------------------------
 # Notificação
