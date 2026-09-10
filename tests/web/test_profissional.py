@@ -45,9 +45,11 @@ async def logar(
 
 class TestPerfil:
     async def test_form_exige_login(self, app: FastAPI) -> None:
+        """Manda para o login guardando o destino, em vez de uma página de erro."""
         async with cliente(app) as c:
             r = await c.get("/profissional/perfil")
-        assert r.status_code == 401
+        assert r.status_code == 303
+        assert r.headers["location"] == "/entrar?proximo=%2Fprofissional%2Fperfil"
 
     async def test_paciente_nao_acessa_area_do_profissional(
         self, app: FastAPI, sessao: AsyncSession, settings: Settings

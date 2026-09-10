@@ -9,18 +9,19 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from urllib.parse import quote
 
 import structlog
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import saude
 from app.api.webhooks import mercadopago as webhook_mercadopago
 from app.core.config import RAIZ_PROJETO, Settings, get_settings
 from app.core.deps import obter_usuario_opcional
-from app.core.erros import ErroDominio
+from app.core.erros import ErroDominio, NaoAutenticado
 from app.core.logging import configurar_logging, get_logger
 from app.core.seguranca import gerar_token_opaco
 from app.core.sessao_web import COOKIE_CSRF, DURACAO_SESSAO, csrf_valido
@@ -195,6 +196,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 status_code=exc.status_http,
                 headers={"HX-Retarget": "#alerta", "HX-Reswap": "innerHTML"},
             )
+
+        # `text/event-stream` não é navegação: o EventSource seguiria o
+        # redirecionamento, receberia HTML e só conseguiria dizer "erro" ao
+        # ouvinte. Com 401 ele desiste e o lobby cai para o polling, que já sabe
+        # levar a pessoa ao login (js/htmx-config.js).
+        eh_stream = "text/event-stream" in request.headers.get("Accept", "")
+
+        if isinstance(exc, NaoAutenticado) and not eh_stream:
+            # Navegação normal que esbarra em login vai para /entrar, não para
+            # uma página de erro 401 -- que é um beco: não diz o que fazer e não
+            # tem como sair. Fica ainda mais estranho no PWA, que abre em tela
+            # cheia, sem barra de endereço para corrigir a URL.
+            #
+            # Só `NaoAutenticado`: senha errada (`CredenciaisInvalidas`) e
+            # assinatura de webhook inválida continuam respondendo 401.
+            destino = "/entrar"
+            if request.method == "GET":
+                alvo = request.url.path
+                if request.url.query:
+                    alvo = f"{alvo}?{request.url.query}"
+                destino = f"/entrar?proximo={quote(alvo, safe='')}"
+            return RedirectResponse(destino, status_code=303)
 
         return templates.TemplateResponse(
             request=request,

@@ -188,4 +188,5 @@ class TestAcessoAoDocumento:
 
         async with navegador(app) as c:
             r = await c.get(f"/midia/documento/{uuid.uuid4()}")
-        assert r.status_code == 401
+        assert r.status_code == 303
+        assert r.headers["location"].startswith("/entrar?proximo=")

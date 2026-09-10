@@ -91,9 +91,17 @@ def _stream_curto(monkeypatch: pytest.MonkeyPatch) -> None:
 
 class TestStreamDeEventos:
     async def test_exige_login(self, app: FastAPI, sessao: AsyncSession) -> None:
+        """Aqui é 401, não redirecionamento.
+
+        O EventSource seguiria um 303, receberia HTML e só saberia dizer "erro".
+        Com 401 ele desiste e o lobby cai para o polling, que sabe levar ao login.
+        """
         _, _, agendamento, _ = await cenario(sessao)
         async with cliente(app) as c:
-            r = await c.get(f"/sessao/{agendamento.id}/eventos")
+            r = await c.get(
+                f"/sessao/{agendamento.id}/eventos",
+                headers={"Accept": "text/event-stream"},
+            )
         assert r.status_code == 401
 
     async def test_estranho_leva_404_e_nao_um_stream_morto(

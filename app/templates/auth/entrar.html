@@ -15,6 +15,9 @@
 
   <form method="post" action="{{ url_for('entrar') }}" class="mt-8 space-y-5">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if proximo %}
+    <input type="hidden" name="proximo" value="{{ proximo }}">
+    {% endif %}
     {{ campo("email", "E-mail", tipo="email", requerido=true, autocomplete="username") }}
     {{ campo("senha", "Senha", tipo="password", requerido=true, autocomplete="current-password") }}
     <div class="pt-2">{{ botao("Entrar") }}</div>

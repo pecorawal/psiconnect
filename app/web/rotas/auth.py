@@ -24,7 +24,7 @@ from app.services.termos_service import TermosService
 
 router = APIRouter(tags=["auth"])
 
-#: Para onde cada papel vai depois de entrar.
+#: Para onde cada papel vai depois de entrar, quando não há destino pedido.
 DESTINO_POR_PAPEL = {
     Papel.PACIENTE: "/paciente/sintomas",
     Papel.PROFISSIONAL: "/profissional/perfil",
@@ -32,18 +32,47 @@ DESTINO_POR_PAPEL = {
 }
 
 
+def destino_seguro(proximo: str | None, padrao: str) -> str:
+    """Valida o ``?proximo=`` antes de mandar alguém para lá.
+
+    Sem isto, ``/entrar?proximo=https://site-falso.test`` vira rampa de
+    phishing: o link é do nosso domínio, a pessoa entra de verdade e é jogada
+    para fora logo depois de digitar a senha. Só caminho do próprio site passa.
+    """
+    if not proximo or not proximo.startswith("/"):
+        return padrao
+    # "//outro.test" e "/\outro.test" são protocol-relative: saem do domínio.
+    if proximo.startswith(("//", "/\\")):
+        return padrao
+    if "\r" in proximo or "\n" in proximo:
+        return padrao
+    if proximo.split("?", 1)[0] == "/entrar":
+        return padrao  # não faz sentido voltar para o próprio login
+    return proximo
+
+
 def montar(templates: Jinja2Templates) -> APIRouter:
     @router.get("/entrar", name="entrar")
     async def form_login(
-        request: Request, usuario: UsuarioOpcional, expirou: bool = False
+        request: Request,
+        usuario: UsuarioOpcional,
+        expirou: bool = False,
+        proximo: str = "",
     ) -> Response:
         if usuario is not None:
-            return RedirectResponse(DESTINO_POR_PAPEL[usuario.papel], status_code=303)
+            return RedirectResponse(
+                destino_seguro(proximo, DESTINO_POR_PAPEL[usuario.papel]), status_code=303
+            )
         return responder(
             request,
             templates,
             template_completo="auth/entrar.html",
-            contexto={"titulo": "Entrar", "expirou": expirou},
+            contexto={
+                "titulo": "Entrar",
+                "expirou": expirou,
+                # Segue no formulário para sobreviver ao POST.
+                "proximo": destino_seguro(proximo, ""),
+            },
         )
 
     @router.post("/entrar")
@@ -54,11 +83,15 @@ def montar(templates: Jinja2Templates) -> APIRouter:
         contexto: Contexto,
         email: Annotated[str, Form()],
         senha: Annotated[str, Form()],
+        proximo: Annotated[str, Form()] = "",
     ) -> Response:
         async with UnitOfWork(sessao):
             usuario, token = await AuthService(sessao).autenticar(email, senha, contexto)
 
-        resposta = RedirectResponse(DESTINO_POR_PAPEL[usuario.papel], status_code=303)
+        # Quem foi barrado a caminho de uma página volta para ela, não para a
+        # porta de entrada do papel.
+        destino = destino_seguro(proximo, DESTINO_POR_PAPEL[usuario.papel])
+        resposta = RedirectResponse(destino, status_code=303)
         definir_cookie_sessao(resposta, settings, token)
         return resposta
 

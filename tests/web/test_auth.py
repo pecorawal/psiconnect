@@ -236,3 +236,102 @@ class TestLogin:
             r = await c.post("/sair", headers={"X-CSRF-Token": c.cookies[COOKIE_CSRF]})
             assert r.status_code == 303
             assert not c.cookies.get(COOKIE_SESSAO)
+
+
+class TestVoltarParaOndeQueriaIr:
+    """Quem esbarra no login volta para a página que pediu — sem abrir buraco."""
+
+    async def test_pagina_protegida_manda_para_o_login_com_o_destino(self, app: FastAPI) -> None:
+        async with cliente(app) as c:
+            r = await c.get("/painel")
+        assert r.status_code == 303
+        assert r.headers["location"] == "/entrar?proximo=%2Fpainel"
+
+    async def test_query_string_sobrevive(self, app: FastAPI) -> None:
+        """Voltar para /profissional/financeiro sem o mês seria voltar errado."""
+        async with cliente(app) as c:
+            r = await c.get("/profissional/financeiro?ano=2026&mes=3")
+        assert r.headers["location"] == (
+            "/entrar?proximo=%2Fprofissional%2Ffinanceiro%3Fano%3D2026%26mes%3D3"
+        )
+
+    async def test_post_sem_login_nao_carrega_destino(self, app: FastAPI) -> None:
+        """Repetir um POST depois do login não é seguro nem possível: só o form."""
+        async with cliente(app) as c:
+            headers = await _com_csrf(c)
+            r = await c.post("/sessao/qualquer/consentir", headers=headers)
+        assert r.status_code == 303
+        assert r.headers["location"] == "/entrar"
+
+    async def test_formulario_carrega_o_destino(self, app: FastAPI) -> None:
+        async with cliente(app) as c:
+            r = await c.get("/entrar?proximo=/painel")
+        assert '<input type="hidden" name="proximo" value="/painel">' in r.text
+
+    async def test_login_leva_ao_destino_pedido(self, app: FastAPI) -> None:
+        async with cliente(app) as c:
+            headers = await _com_csrf(c)
+            await c.post(
+                "/cadastro/paciente",
+                data={
+                    "nome_completo": "Volta Para La",
+                    "email": "volta@teste.br",
+                    "senha": "Senha-Forte-123",
+                    "data_nascimento": "1990-05-20",
+                    "aceite": "1",
+                },
+                headers=headers,
+            )
+            await c.post("/sair", headers=headers)
+
+            r = await c.post(
+                "/entrar",
+                data={
+                    "email": "volta@teste.br",
+                    "senha": "Senha-Forte-123",
+                    "proximo": "/painel",
+                },
+                headers=await _com_csrf(c),
+            )
+        assert r.status_code == 303
+        assert r.headers["location"] == "/painel"
+
+
+class TestDestinoSeguro:
+    """`?proximo=` é entrada do usuário: sem validação vira rampa de phishing.
+
+    O link seria do nosso domínio, a pessoa entraria de verdade e só depois
+    seria jogada para fora — o pior momento possível para sair do site.
+    """
+
+    @pytest.mark.parametrize(
+        "hostil",
+        [
+            "https://site-falso.test/login",
+            "//site-falso.test",
+            "/\\site-falso.test",  # protocol-relative com barra invertida
+            "javascript:alert(1)",
+            "/painel\r\nSet-Cookie: a=b",  # tentativa de injetar cabeçalho
+            "/entrar",  # laço no próprio login
+            "",
+        ],
+    )
+    def test_destino_de_fora_e_descartado(self, hostil: str) -> None:
+        from app.web.rotas.auth import destino_seguro
+
+        assert destino_seguro(hostil, "/padrao") == "/padrao"
+
+    @pytest.mark.parametrize(
+        "aceito",
+        ["/painel", "/profissional/financeiro?ano=2026", "/paciente/sintomas"],
+    )
+    def test_caminho_do_proprio_site_passa(self, aceito: str) -> None:
+        from app.web.rotas.auth import destino_seguro
+
+        assert destino_seguro(aceito, "/padrao") == aceito
+
+    async def test_login_ignora_destino_externo(self, app: FastAPI) -> None:
+        """O caminho ponta a ponta, não só a função."""
+        async with cliente(app) as c:
+            r = await c.get("/entrar?proximo=https://site-falso.test")
+        assert "site-falso" not in r.text
