@@ -110,18 +110,14 @@ class FinanceiroService:
     def __init__(self, sessao: AsyncSession) -> None:
         self.sessao = sessao
 
-    def _pagamentos_do_profissional(
-        self, profissional_id: uuid.UUID
-    ) -> Select[tuple[Pagamento]]:
+    def _pagamentos_do_profissional(self, profissional_id: uuid.UUID) -> Select[tuple[Pagamento]]:
         return (
             select(Pagamento)
             .join(CompraPlano, Pagamento.compra_plano_id == CompraPlano.id)
             .where(CompraPlano.profissional_id == profissional_id)
         )
 
-    async def resumo(
-        self, profissional_id: uuid.UUID, *, ano: int, mes: int
-    ) -> ResumoFinanceiro:
+    async def resumo(self, profissional_id: uuid.UUID, *, ano: int, mes: int) -> ResumoFinanceiro:
         inicio, fim = limites_do_mes_local(ano, mes)
 
         # O recorte é por `aprovado_em`, não por `criado_em`: o que conta no mês
@@ -140,9 +136,7 @@ class FinanceiroService:
             .join(CompraPlano, Pagamento.compra_plano_id == CompraPlano.id)
             .where(
                 CompraPlano.profissional_id == profissional_id,
-                Pagamento.status.in_(
-                    (StatusPagamento.PENDENTE, StatusPagamento.CRIADO)
-                ),
+                Pagamento.status.in_((StatusPagamento.PENDENTE, StatusPagamento.CRIADO)),
             )
         )
 
@@ -168,8 +162,7 @@ class FinanceiroService:
                 CompraPlano.profissional_id == profissional_id,
                 CompraPlano.status == StatusCompra.ATIVA,
                 CreditoSessao.status == StatusCredito.DISPONIVEL,
-                (CreditoSessao.expira_em.is_(None))
-                | (CreditoSessao.expira_em > agora_utc()),
+                (CreditoSessao.expira_em.is_(None)) | (CreditoSessao.expira_em > agora_utc()),
             )
         )
 
@@ -178,9 +171,7 @@ class FinanceiroService:
         return ResumoFinanceiro(
             bruto_centavos=sum(p.valor_bruto_centavos for p in linhas),
             taxa_provedor_centavos=sum(p.taxa_provedor_centavos for p in linhas),
-            comissao_plataforma_centavos=sum(
-                p.comissao_plataforma_centavos for p in linhas
-            ),
+            comissao_plataforma_centavos=sum(p.comissao_plataforma_centavos for p in linhas),
             imposto_retido_centavos=sum(p.imposto_retido_centavos for p in linhas),
             liquido_centavos=sum(p.liquido_profissional_centavos for p in linhas),
             pendente_centavos=int(pendentes or 0),
@@ -246,9 +237,7 @@ class FinanceiroService:
             for linha in (await self.sessao.execute(consulta)).all()
         ]
 
-    async def meses_com_movimento(
-        self, profissional_id: uuid.UUID
-    ) -> list[tuple[int, int]]:
+    async def meses_com_movimento(self, profissional_id: uuid.UUID) -> list[tuple[int, int]]:
         """``(ano, mês)`` em que houve lançamento, do mais recente ao mais antigo.
 
         Alimenta o seletor de período: oferecer meses vazios seria convidar o
@@ -270,9 +259,7 @@ class FinanceiroService:
         meses.add((atual.year, atual.month))
         return sorted(meses, reverse=True)
 
-    async def proximas_sessoes_pagas(
-        self, profissional_id: uuid.UUID
-    ) -> list[Agendamento]:
+    async def proximas_sessoes_pagas(self, profissional_id: uuid.UUID) -> list[Agendamento]:
         """Sessões confirmadas que já estão pagas — o trabalho contratado."""
         return list(
             (

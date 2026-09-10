@@ -112,8 +112,7 @@ class CreditoService:
                 CompraPlano.paciente_id == paciente_id,
                 CompraPlano.status == StatusCompra.ATIVA,
                 CreditoSessao.status == StatusCredito.DISPONIVEL,
-                (CreditoSessao.expira_em.is_(None))
-                | (CreditoSessao.expira_em > agora_utc()),
+                (CreditoSessao.expira_em.is_(None)) | (CreditoSessao.expira_em > agora_utc()),
             )
             .group_by(
                 CompraPlano.id,
@@ -149,9 +148,7 @@ class CreditoService:
             CompraPlano.profissional_id == profissional_id,
             CompraPlano.especialidade_id == especialidade_id,
         )
-        total = await self.sessao.scalar(
-            select(func.count()).select_from(consulta.subquery())
-        )
+        total = await self.sessao.scalar(select(func.count()).select_from(consulta.subquery()))
         return int(total or 0)
 
     # --- Consumo ------------------------------------------------------------

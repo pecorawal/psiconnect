@@ -67,9 +67,7 @@ async def _pagamento(
     await sessao.flush()
 
     for _ in range(creditos_disponiveis):
-        sessao.add(
-            CreditoSessao(compra_plano_id=compra.id, status=StatusCredito.DISPONIVEL)
-        )
+        sessao.add(CreditoSessao(compra_plano_id=compra.id, status=StatusCredito.DISPONIVEL))
 
     pagamento = Pagamento(
         compra_plano_id=compra.id,
@@ -99,9 +97,7 @@ def _mes_atual() -> tuple[int, int]:
 
 
 class TestResumo:
-    async def test_soma_as_parcelas_sem_perder_centavo(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_soma_as_parcelas_sem_perder_centavo(self, sessao: AsyncSession) -> None:
         especialidade = await criar_especialidade(sessao)
         profissional = await criar_profissional(sessao)
         paciente = await criar_paciente(sessao)
@@ -109,9 +105,7 @@ class TestResumo:
         await _pagamento(sessao, paciente, profissional, especialidade)
 
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
 
         assert resumo.bruto_centavos == 30000
         assert resumo.comissao_plataforma_centavos == 3600
@@ -137,17 +131,13 @@ class TestResumo:
         )
 
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.percentual_efetivo == 12.99
 
     async def test_sem_movimento_nao_divide_por_zero(self, sessao: AsyncSession) -> None:
         profissional = await criar_profissional(sessao)
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.bruto_centavos == 0
         assert resumo.percentual_efetivo == 0.0
 
@@ -165,9 +155,7 @@ class TestResumo:
         )
 
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.bruto_centavos == 0
         assert resumo.pendente_centavos == 15000
 
@@ -191,32 +179,24 @@ class TestResumo:
         )
 
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.sessoes_a_entregar == 4
 
     async def test_split_inativo_sem_conta_conectada(self, sessao: AsyncSession) -> None:
         """A tela precisa avisar que o repasse automático não está valendo."""
         profissional = await criar_profissional(sessao)
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.split_ativo is False
 
         profissional.mp_user_id = "123456"
         await sessao.flush()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.split_ativo is True
 
 
 class TestIsolamento:
-    async def test_profissional_nao_ve_faturamento_de_outro(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_profissional_nao_ve_faturamento_de_outro(self, sessao: AsyncSession) -> None:
         """Vazamento de dado comercial entre concorrentes na mesma plataforma."""
         especialidade = await criar_especialidade(sessao)
         profissional_a = await criar_profissional(sessao)
@@ -253,9 +233,7 @@ class TestPeriodo:
         )
 
         ano, mes = _mes_atual()
-        resumo = await FinanceiroService(sessao).resumo(
-            profissional.usuario_id, ano=ano, mes=mes
-        )
+        resumo = await FinanceiroService(sessao).resumo(profissional.usuario_id, ano=ano, mes=mes)
         assert resumo.bruto_centavos == 0
 
     async def test_recorte_usa_o_mes_local(self, sessao: AsyncSession) -> None:
@@ -273,9 +251,7 @@ class TestPeriodo:
         instante = fim_janeiro - timedelta(minutes=30)
         assert instante.month == 2, "o instante escolhido é fevereiro em UTC"
 
-        await _pagamento(
-            sessao, paciente, profissional, especialidade, aprovado_em=instante
-        )
+        await _pagamento(sessao, paciente, profissional, especialidade, aprovado_em=instante)
 
         servico = FinanceiroService(sessao)
         janeiro = await servico.resumo(profissional.usuario_id, ano=2026, mes=1)
@@ -302,9 +278,7 @@ class TestPeriodo:
         assert (
             await servico.resumo(profissional.usuario_id, ano=2025, mes=12)
         ).bruto_centavos == 15000
-        assert (
-            await servico.resumo(profissional.usuario_id, ano=2026, mes=1)
-        ).bruto_centavos == 0
+        assert (await servico.resumo(profissional.usuario_id, ano=2026, mes=1)).bruto_centavos == 0
 
 
 class TestMovimentos:
@@ -337,12 +311,8 @@ class TestMovimentos:
             StatusPagamento.RECUSADO,
         }
 
-    async def test_meses_com_movimento_inclui_o_atual(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_meses_com_movimento_inclui_o_atual(self, sessao: AsyncSession) -> None:
         """O seletor sempre oferece o mês corrente, mesmo sem lançamento."""
         profissional = await criar_profissional(sessao)
-        meses = await FinanceiroService(sessao).meses_com_movimento(
-            profissional.usuario_id
-        )
+        meses = await FinanceiroService(sessao).meses_com_movimento(profissional.usuario_id)
         assert _mes_atual() in meses

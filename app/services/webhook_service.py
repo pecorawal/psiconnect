@@ -107,9 +107,7 @@ class WebhookService:
             return
 
         pagamento = await self.sessao.scalar(
-            select(Pagamento).where(
-                Pagamento.provedor_pagamento_id == evento.provedor_pagamento_id
-            )
+            select(Pagamento).where(Pagamento.provedor_pagamento_id == evento.provedor_pagamento_id)
         )
         if pagamento is None:
             # Acontece de verdade: o webhook pode chegar antes de o POST que

@@ -281,9 +281,7 @@ class CheckoutService:
             agendamento_id=str(agendamento.id),
         )
 
-    async def desfazer_pagamento(
-        self, pagamento: Pagamento, agendamento: Agendamento
-    ) -> None:
+    async def desfazer_pagamento(self, pagamento: Pagamento, agendamento: Agendamento) -> None:
         """Recusa, cancelamento ou estorno: solta o horário e devolve o crédito.
 
         Sem isto, um Pix que expira ou um estorno deixariam o horário travado

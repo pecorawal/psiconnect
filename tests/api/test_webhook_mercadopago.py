@@ -61,9 +61,7 @@ def cabecalhos(pagamento_id: str, request_id: str) -> dict[str, str]:
 
 @pytest.fixture
 async def cliente(app: FastAPI) -> httpx.AsyncClient:
-    return httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://teste"
-    )
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://teste")
 
 
 class TestAutenticacao:
@@ -79,9 +77,7 @@ class TestAutenticacao:
         )
         assert r.status_code == 401
 
-    async def test_assinatura_de_outro_pagamento_e_401(
-        self, cliente: httpx.AsyncClient
-    ) -> None:
+    async def test_assinatura_de_outro_pagamento_e_401(self, cliente: httpx.AsyncClient) -> None:
         """Capturar um webhook legítimo e trocar o id não pode funcionar."""
         r = await cliente.post(
             URL,

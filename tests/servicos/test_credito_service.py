@@ -52,9 +52,7 @@ async def _comprar_pacote(
     plano = await sessao.scalar(select(Plano).where(Plano.slug == SlugPlano.PACOTE_5))
     assert plano is not None, "seed de planos ausente"
 
-    expira = (
-        agora_utc() + timedelta(days=expira_em_dias) if expira_em_dias is not None else None
-    )
+    expira = agora_utc() + timedelta(days=expira_em_dias) if expira_em_dias is not None else None
     compra = CompraPlano(
         paciente_id=paciente.usuario_id,
         profissional_id=profissional.usuario_id,
@@ -70,10 +68,7 @@ async def _comprar_pacote(
     sessao.add(compra)
     await sessao.flush()
     sessao.add_all(
-        [
-            CreditoSessao(compra_plano_id=compra.id, expira_em=expira)
-            for _ in range(quantidade)
-        ]
+        [CreditoSessao(compra_plano_id=compra.id, expira_em=expira) for _ in range(quantidade)]
     )
     await sessao.flush()
     return compra
@@ -113,9 +108,7 @@ class TestSaldo:
         especialidade = await criar_especialidade(sessao)
         profissional = await criar_profissional(sessao)
         paciente = await criar_paciente(sessao)
-        await _comprar_pacote(
-            sessao, paciente, profissional, especialidade, expira_em_dias=-1
-        )
+        await _comprar_pacote(sessao, paciente, profissional, especialidade, expira_em_dias=-1)
 
         assert await CreditoService(sessao).saldo(paciente.usuario_id) == []
 
@@ -140,9 +133,7 @@ class TestConsumo:
         saldos = await servico.saldo(paciente.usuario_id)
         assert saldos[0].disponiveis == 4
 
-    async def test_credito_de_outro_profissional_nao_serve(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_credito_de_outro_profissional_nao_serve(self, sessao: AsyncSession) -> None:
         """A economia do pacote depende disto.
 
         Sem a amarração, o paciente compraria dez sessões com o profissional
@@ -165,9 +156,7 @@ class TestConsumo:
         with pytest.raises(SemCreditoDisponivel):
             await CreditoService(sessao).consumir(agendamento)
 
-    async def test_credito_de_outra_especialidade_nao_serve(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_credito_de_outra_especialidade_nao_serve(self, sessao: AsyncSession) -> None:
         """O preço varia por especialidade dentro do mesmo profissional."""
         esp_a = await criar_especialidade(sessao)
         esp_b = await criar_especialidade(sessao)
@@ -263,22 +252,16 @@ class TestDevolucao:
         assert (await servico.saldo(paciente.usuario_id))[0].disponiveis == 4
 
         agenda = AgendamentoService(sessao, ParametrosService(sessao, get_settings()))
-        await agenda.cancelar(
-            agendamento.id, por_id=paciente.usuario_id, pelo_paciente=True
-        )
+        await agenda.cancelar(agendamento.id, por_id=paciente.usuario_id, pelo_paciente=True)
 
         assert (await servico.saldo(paciente.usuario_id))[0].disponiveis == 5
 
-    async def test_credito_vencido_nao_volta_para_disponivel(
-        self, sessao: AsyncSession
-    ) -> None:
+    async def test_credito_vencido_nao_volta_para_disponivel(self, sessao: AsyncSession) -> None:
         """Devolver um crédito morto o faria aparecer no saldo sem servir."""
         especialidade = await criar_especialidade(sessao)
         profissional = await criar_profissional(sessao)
         paciente = await criar_paciente(sessao)
-        compra = await _comprar_pacote(
-            sessao, paciente, profissional, especialidade, quantidade=1
-        )
+        compra = await _comprar_pacote(sessao, paciente, profissional, especialidade, quantidade=1)
         agendamento = await criar_agendamento(
             sessao,
             profissional=profissional,
@@ -333,9 +316,7 @@ class TestExpiracao:
 
 
 class TestConcorrencia:
-    async def test_duas_transacoes_nao_gastam_o_mesmo_credito(
-        self, settings, conexao
-    ) -> None:
+    async def test_duas_transacoes_nao_gastam_o_mesmo_credito(self, settings, conexao) -> None:
         """Duas sessões simultâneas, um crédito só: exatamente uma vence.
 
         Sem `FOR UPDATE SKIP LOCKED`, as duas leriam a mesma linha DISPONIVEL e
@@ -356,9 +337,7 @@ class TestConcorrencia:
             especialidade = await criar_especialidade(preparo)
             profissional = await criar_profissional(preparo)
             paciente = await criar_paciente(preparo)
-            await _comprar_pacote(
-                preparo, paciente, profissional, especialidade, quantidade=1
-            )
+            await _comprar_pacote(preparo, paciente, profissional, especialidade, quantidade=1)
             a1 = await criar_agendamento(
                 preparo,
                 profissional=profissional,
@@ -417,18 +396,12 @@ class TestConcorrencia:
             await limpeza.execute(
                 delete(CreditoSessao).where(
                     CreditoSessao.compra_plano_id.in_(
-                        select(CompraPlano.id).where(
-                            CompraPlano.paciente_id == paciente_id
-                        )
+                        select(CompraPlano.id).where(CompraPlano.paciente_id == paciente_id)
                     )
                 )
             )
-            await limpeza.execute(
-                delete(CompraPlano).where(CompraPlano.paciente_id == paciente_id)
-            )
-            await limpeza.execute(
-                delete(Agendamento).where(Agendamento.id.in_([a1_id, a2_id]))
-            )
+            await limpeza.execute(delete(CompraPlano).where(CompraPlano.paciente_id == paciente_id))
+            await limpeza.execute(delete(Agendamento).where(Agendamento.id.in_([a1_id, a2_id])))
             await limpeza.commit()
             assert isinstance(paciente_id, uuid.UUID)
             assert Usuario is not None

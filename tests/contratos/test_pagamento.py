@@ -152,9 +152,7 @@ class TestContratoComum:
 
         assert cobranca.valor_centavos == 14999
 
-    async def test_taxa_estimada_por_metodo(
-        self, provedor: tuple[PaymentProvider, str]
-    ) -> None:
+    async def test_taxa_estimada_por_metodo(self, provedor: tuple[PaymentProvider, str]) -> None:
         provedor, _ = provedor
         pix = provedor.taxa_estimada(MetodoPagamento.PIX, 15000)
         credito = provedor.taxa_estimada(MetodoPagamento.CARTAO_CREDITO, 15000)

@@ -132,9 +132,7 @@ class FakePaymentProvider:
         O segredo é fixo e público (``SEGREDO_DEV``): o objetivo aqui é manter o
         formato honesto, não proteger nada.
         """
-        return validar_assinatura_mp(
-            headers, corpo, segredo=SEGREDO_DEV, erro=WebhookInvalido
-        )
+        return validar_assinatura_mp(headers, corpo, segredo=SEGREDO_DEV, erro=WebhookInvalido)
 
 
 def _qrcode_svg_base64(texto: str) -> str:

@@ -76,9 +76,7 @@ MEIO_DE_PAGAMENTO = {
 class FalhaNoPagamento(ErroDominio):
     codigo = "falha_pagamento"
     status_http = 502
-    mensagem_padrao = (
-        "Não foi possível falar com o meio de pagamento agora. Tente novamente."
-    )
+    mensagem_padrao = "Não foi possível falar com o meio de pagamento agora. Tente novamente."
 
 
 class WebhookInvalido(ErroDominio):
@@ -190,9 +188,7 @@ class MercadoPagoPaymentProvider:
         if req.metodo is MetodoPagamento.PIX:
             # Sem isso o Pix nasce sem prazo e o horário reservado ficaria preso
             # esperando um pagamento que talvez nunca venha.
-            corpo["date_of_expiration"] = _formatar_expiracao(
-                agora_utc().replace(microsecond=0)
-            )
+            corpo["date_of_expiration"] = _formatar_expiracao(agora_utc().replace(microsecond=0))
 
         dados = await self._requisitar(
             "POST", "/v1/payments", json_body=corpo, chave_idempotencia=req.chave_idempotencia
@@ -207,9 +203,7 @@ class MercadoPagoPaymentProvider:
         self, provedor_pagamento_id: str, valor_centavos: int | None = None
     ) -> Cobranca:
         corpo = (
-            {"amount": float(Decimal(valor_centavos) / 100)}
-            if valor_centavos is not None
-            else None
+            {"amount": float(Decimal(valor_centavos) / 100)} if valor_centavos is not None else None
         )
         await self._requisitar(
             "POST",
@@ -262,9 +256,7 @@ def _centavos(valor: object) -> int:
     `round()` do Python arredonda para o par mais próximo -- num caminho de
     dinheiro, isso é diferença que aparece na conciliação.
     """
-    return int(
-        (Decimal(str(valor or 0)) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-    )
+    return int((Decimal(str(valor or 0)) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 def _ler_data(valor: object) -> datetime | None:
