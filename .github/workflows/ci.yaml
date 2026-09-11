@@ -78,6 +78,15 @@ jobs:
         # Falha se alguém alterou um modelo sem gerar migration.
         run: alembic check
 
+      - name: Seed de referência
+        # Planos, termos versionados e taxonomias não vivem em migration, e a
+        # suíte depende deles -- 39 testes falhavam aqui com "seed de planos
+        # ausente" enquanto passavam na máquina do dev, onde o `make bootstrap`
+        # já tinha semeado o banco meses antes.
+        #
+        # Depois do ciclo de downgrade/upgrade acima, que apaga tudo.
+        run: python -m app.seeds
+
       - name: Testes
         run: pytest --cov=app --cov-report=term-missing --cov-report=xml
 
