@@ -5,8 +5,7 @@ on:
     branches: [dev]
 
 permissions:
-  # Declarar `permissions` zera tudo que não estiver aqui: sem `contents`, nem
-  # o checkout roda.
+  # Declarar `permissions` zera tudo que não estiver aqui.
   contents: read
   pull-requests: write
 
@@ -14,17 +13,27 @@ jobs:
   auto-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Abrir PR de dev para main
         env:
           GH_TOKEN: ${{ github.token }}
-        # Bloco literal, e não `run:` numa linha só: o `feat:` que havia no
-        # --title fazia o YAML ler a linha como mapeamento, e o workflow falhava
-        # antes de iniciar qualquer job.
+          GH_REPO: ${{ github.repository }}
+        # Sem checkout de propósito: com GH_REPO o gh fala direto com a API, e
+        # não há nada a fazer num clone. Era justamente o checkout (raso, de uma
+        # branch só) que quebrava o `--fill`: ele precisa de `origin/main` para
+        # montar título e corpo, e essa ref não existe no runner.
         #
-        # `--fill` sozinho: o gh recusa combiná-lo com --title/--body, e o
-        # título tirado dos commits diz mais que "atualizações automáticas".
+        # Título fixo em vez de --fill: este é um PR de integração rolante, e o
+        # --fill pegaria a mensagem de um commit qualquer do intervalo.
         run: |
-          gh pr create --base main --head dev --fill \
-            || echo "nenhum PR criado (já existe um, ou dev não está à frente de main)"
+          if gh pr create --base main --head dev \
+               --title "Integração dev -> main" \
+               --body "Aberto automaticamente a cada push em dev."; then
+            echo "PR criado."
+          elif [ "$(gh pr list --base main --head dev --state open --json number --jq 'length')" != "0" ]; then
+            echo "Já existe um PR aberto para dev -> main."
+          else
+            # Sem isto a falha some: o caso mais provável é a opção
+            # "Allow GitHub Actions to create and approve pull requests"
+            # estar desligada em Settings > Actions.
+            echo "::warning::Não foi possível abrir o PR de dev para main."
+          fi
