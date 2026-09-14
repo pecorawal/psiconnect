@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import botao %}
+{% from "componentes/passos.html" import passos %}
+{% block titulo %}Suas especialidades{% endblock %}
+
+{% set rotulos_categoria = {
+  "quadros": "Quadros clínicos",
+  "momentos": "Momentos de vida",
+  "relacoes": "Relações",
+  "publicos": "Públicos",
+  "abordagens": "Abordagens",
+} %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-3xl px-4 py-12">
+  {{ passos("especialidades") }}
+
+  <h1 class="text-2xl font-bold text-slate-900">Suas especialidades</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Escolha até <strong>{{ maximo }}</strong> — de preferência aquelas em que você tem mais
+    domínio. Menos e melhor ajuda o paciente certo a encontrar você.
+  </p>
+
+  <form method="post" action="{{ url_for('especialidades_profissional') }}" class="mt-8">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="sticky top-20 z-30 mb-6 rounded-xl border border-slate-200 bg-white px-4 py-3
+                text-sm shadow-sm">
+      <span id="contagem" class="font-medium text-slate-900">0</span>
+      <span class="text-slate-600">de {{ maximo }} escolhidas</span>
+    </div>
+
+    {% for categoria, lista in por_categoria.items() %}
+    <fieldset class="mb-8">
+      <legend class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        {{ rotulos_categoria.get(categoria, categoria) }}
+      </legend>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {% for esp in lista %}
+        {% set escolhida = escolhidas.get(esp.id) %}
+        <label class="flex cursor-pointer flex-col gap-2 rounded-xl border border-slate-200
+                      bg-white p-4 transition hover:border-teal-400 has-[:checked]:border-teal-600
+                      has-[:checked]:bg-teal-50/40">
+          <span class="flex items-start gap-3">
+            <input type="checkbox" name="especialidade_id" value="{{ esp.id }}"
+                   data-especialidade
+                   {% if escolhida %}checked {% endif %}
+                   class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700
+                          focus:ring-2 focus:ring-teal-600/30">
+            <span class="flex-1">
+              <span class="block font-medium text-slate-900">{{ esp.nome }}</span>
+              {% if esp.descricao %}
+              <span class="block text-xs text-slate-500">{{ esp.descricao }}</span>
+              {% endif %}
+            </span>
+          </span>
+          <span class="flex items-center gap-2 pl-7">
+            <span class="text-sm text-slate-500">R$</span>
+            <input type="text" name="preco_{{ esp.id }}" inputmode="decimal"
+                   placeholder="150,00"
+                   value="{{ (escolhida.preco_padrao_centavos / 100) | round(2) if escolhida else '' }}"
+                   class="w-28 rounded-lg border border-slate-300 px-3 py-1.5 text-sm
+                          focus:border-teal-600 focus:outline-none">
+            <span class="text-xs text-slate-500">por sessão</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <div class="pt-2">{{ botao("Salvar e montar agenda") }}</div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Contador e trava do máximo. É conveniência de UI: o service valida e o
+  // banco garante (CHECK ordem 1..5 + UNIQUE), então nada depende deste JS.
+  (function () {
+    var maximo = {{ maximo }};
+    var caixas = document.querySelectorAll("[data-especialidade]");
+    var contador = document.getElementById("contagem");
+
+    function atualizar() {
+      var marcadas = document.querySelectorAll("[data-especialidade]:checked").length;
+      contador.textContent = marcadas;
+      contador.className = marcadas > maximo
+        ? "font-medium text-rose-700" : "font-medium text-slate-900";
+      caixas.forEach(function (c) { c.disabled = !c.checked && marcadas >= maximo; });
+    }
+    caixas.forEach(function (c) { c.addEventListener("change", atualizar); });
+    atualizar();
+  })();
+</script>
+{% endblock %}

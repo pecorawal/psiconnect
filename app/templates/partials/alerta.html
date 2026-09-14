@@ -1,0 +1,27 @@
+{# Fragmento de alerta.
+
+   Alvo do HX-Retarget usado pelo handler de ErroDominio: qualquer erro de
+   regra de negócio aterrissa aqui, independentemente do hx-target original. #}
+{% set estilos = {
+  "erro":    "border-rose-200 bg-rose-50 text-rose-900",
+  "aviso":   "border-amber-200 bg-amber-50 text-amber-900",
+  "sucesso": "border-teal-200 bg-teal-50 text-teal-900",
+  "info":    "border-sky-200 bg-sky-50 text-sky-900",
+} %}
+<div role="{{ 'alert' if tipo == 'erro' else 'status' }}"
+     class="my-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm
+            {{ estilos.get(tipo, estilos['info']) }}">
+  <span aria-hidden="true" class="mt-0.5 font-bold">
+    {%- if tipo == 'erro' -%}!{%- elif tipo == 'sucesso' -%}✓{%- else -%}i{%- endif -%}
+  </span>
+  <div class="flex-1">
+    <p>{{ mensagem }}</p>
+    {% if campo %}
+    <p class="mt-1 text-xs opacity-75">Campo: {{ campo }}</p>
+    {% endif %}
+  </div>
+  <button type="button"
+          onclick="this.closest('div[role]').remove()"
+          aria-label="Fechar aviso"
+          class="rounded px-2 text-lg leading-none opacity-60 hover:opacity-100">&times;</button>
+</div>

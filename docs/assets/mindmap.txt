@@ -1,0 +1,1 @@
+,Sistema de Atendimento e Agendamento de Consultas Psicológicas,Cadastro do Psicólogo,Funcionalidades do Paciente,Funcionamento da Sessão,Segurança dos Dados,Integrações Planejadas

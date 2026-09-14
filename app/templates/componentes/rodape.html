@@ -1,0 +1,63 @@
+<footer class="mt-16 border-t border-slate-200 bg-white">
+
+  {# Canal de crise. Permanente e em todas as páginas: numa plataforma de saúde
+     mental, quem precisa disso não deve ter que procurar. #}
+  <div class="border-b border-rose-100 bg-rose-50">
+    <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3
+                text-sm text-rose-900">
+      <strong>Precisa de ajuda agora?</strong>
+      <span>
+        O <abbr title="Centro de Valorização da Vida">CVV</abbr> atende 24h, de graça e em sigilo:
+        <a href="tel:188" class="font-semibold underline underline-offset-2 hover:text-rose-700">188</a>
+        ou
+        <a href="https://www.cvv.org.br/" target="_blank" rel="noopener noreferrer"
+           class="font-semibold underline underline-offset-2 hover:text-rose-700">cvv.org.br</a>.
+      </span>
+      <span class="w-full text-rose-800/80 sm:w-auto">
+        Em emergência, ligue 192 (SAMU).
+      </span>
+    </div>
+  </div>
+
+  <div class="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 text-sm sm:grid-cols-3">
+    <div>
+      <p class="font-semibold text-slate-900">{{ app_nome }}</p>
+      <p class="mt-2 text-slate-600">
+        Atendimento psicológico online, com sigilo e por profissionais com registro ativo no
+        conselho.
+      </p>
+    </div>
+
+    <div>
+      <p class="font-semibold text-slate-900">Plataforma</p>
+      <ul class="mt-2 space-y-1 text-slate-600">
+        <li><a class="hover:text-teal-700" href="/como-funciona">Como funciona</a></li>
+        <li><a class="hover:text-teal-700" href="/para-profissionais">Sou profissional</a></li>
+        <li><a class="hover:text-teal-700" href="/precos">Planos e preços</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <p class="font-semibold text-slate-900">Privacidade</p>
+      <ul class="mt-2 space-y-1 text-slate-600">
+        <li><a class="hover:text-teal-700" href="/termos">Termos de uso</a></li>
+        <li><a class="hover:text-teal-700" href="/privacidade">Política de privacidade</a></li>
+        <li><a class="hover:text-teal-700" href="/meus-dados">Meus dados (LGPD)</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-slate-100 px-4 py-6 text-center text-xs text-slate-500">
+    {# Só aparece quando o navegador dispara `beforeinstallprompt` (js/pwa.js):
+       oferecer instalação onde ela não existe seria um botão que não faz nada. #}
+    <button type="button" id="instalar-app" hidden
+            class="mb-4 rounded-xl border border-teal-700 px-4 py-2 text-sm font-medium
+                   text-teal-800 hover:bg-teal-50">
+      Instalar o {{ app_nome }} neste aparelho
+    </button>
+    <p>
+      O {{ app_nome }} não presta atendimento de emergência e não substitui atendimento
+      presencial quando ele for indicado pelo profissional.
+    </p>
+  </div>
+</footer>

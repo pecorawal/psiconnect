@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block titulo %}Seu painel{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-3xl px-4 py-12">
+  <div class="flex flex-wrap items-baseline justify-between gap-3">
+    <h1 class="text-2xl font-bold text-slate-900">Olá, {{ usuario.primeiro_nome }}</h1>
+    {% if eh_profissional %}
+    <span class="flex flex-wrap gap-4 text-sm">
+      <a href="{{ url_for('agenda_profissional') }}" class="text-teal-700 hover:underline">
+        Editar minha agenda
+      </a>
+      <a href="{{ url_for('financeiro') }}" class="text-teal-700 hover:underline">
+        Meus recebimentos
+      </a>
+    </span>
+    {% else %}
+    <span class="flex flex-wrap gap-4 text-sm">
+      <a href="{{ url_for('sintomas') }}" class="text-teal-700 hover:underline">
+        Marcar nova sessão
+      </a>
+      <a href="{{ url_for('dependentes') }}" class="text-teal-700 hover:underline">
+        Meus dependentes
+      </a>
+    </span>
+    {% endif %}
+  </div>
+
+  {% if creditos %}
+  <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    Suas sessões contratadas
+  </h2>
+  <ul class="mt-4 space-y-2">
+    {% for saldo in creditos %}
+    <li class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border
+               border-teal-200 bg-teal-50 px-5 py-3">
+      <span class="text-sm text-teal-900">
+        <strong>{{ saldo.disponiveis }}</strong>
+        {{ "sessão" if saldo.disponiveis == 1 else "sessões" }}
+        com {{ saldo.profissional_nome }}
+        <span class="text-teal-700">· {{ saldo.especialidade_nome }}</span>
+        {% if saldo.expira_em %}
+        <span class="block text-xs text-teal-700">
+          Válidas até {{ saldo.expira_em | data_br }}
+        </span>
+        {% endif %}
+      </span>
+      <a href="{{ url_for('escolher_horario', profissional_id=saldo.profissional_id) }}"
+         class="rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white
+                hover:bg-teal-800">Marcar</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    Próximas sessões
+  </h2>
+
+  {% if not proximos %}
+  <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+    <p class="text-slate-600">
+      {% if eh_profissional %}
+        Nenhuma sessão marcada ainda. Mantenha sua agenda atualizada para receber pacientes.
+      {% else %}
+        Você ainda não tem sessões marcadas.
+      {% endif %}
+    </p>
+    {% if not eh_profissional %}
+    <a href="{{ url_for('sintomas') }}"
+       class="mt-4 inline-block rounded-xl bg-teal-700 px-5 py-2.5 font-medium text-white">
+      Encontrar um profissional
+    </a>
+    {% endif %}
+  </div>
+  {% else %}
+
+  <ul class="mt-4 space-y-3">
+    {% for a in proximos %}
+    {% set s = sessoes.get(a.id) %}
+    <li class="rounded-2xl border border-slate-200 bg-white p-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+          <div class="flex items-center gap-3">
+            {% if not eh_profissional %}
+              {# Requisito: após confirmar, mostrar nome e foto de quem vai atender. #}
+              {% if a.profissional.foto_url %}
+              <img src="{{ a.profissional.foto_url }}" alt=""
+                   class="h-11 w-11 rounded-full object-cover">
+              {% else %}
+              <span aria-hidden="true"
+                    class="grid h-11 w-11 place-items-center rounded-full bg-teal-100
+                           font-semibold text-teal-800">
+                {{ a.profissional.nome_exibicao[0] }}
+              </span>
+              {% endif %}
+              <div>
+                <p class="font-medium text-slate-900">{{ a.profissional.nome_exibicao }}</p>
+                <p class="text-xs text-slate-500">{{ a.profissional.registro_completo }}</p>
+              </div>
+            {% else %}
+              <div>
+                <p class="font-medium text-slate-900">
+                  {{ a.paciente.usuario.nome_completo }}
+                </p>
+                <p class="text-xs text-slate-500">{{ a.especialidade.nome }}</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <p class="mt-3 text-sm text-slate-700">
+            {{ a.inicio_utc | data_extenso }}, às
+            <strong>{{ a.inicio_utc | hora_br }}</strong>
+            <span class="text-slate-400">· {{ a.duracao_min }} min</span>
+          </p>
+
+          {% if a.status.value == "PENDENTE_PAGAMENTO" %}
+          <p class="mt-2 inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs
+                    text-amber-900">
+            Aguardando pagamento
+          </p>
+          {% endif %}
+        </div>
+
+        <div class="flex shrink-0 flex-col items-end gap-2">
+          {% if a.status.value == "PENDENTE_PAGAMENTO" %}
+          <a href="/paciente/checkout/{{ a.id }}"
+             class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-medium text-white
+                    hover:bg-amber-700">Concluir pagamento</a>
+          {% elif s and s.sala_url %}
+          <a href="/sessao/{{ a.id }}"
+             class="rounded-xl bg-teal-700 px-4 py-2 text-sm font-medium text-white
+                    hover:bg-teal-800">Entrar na sessão</a>
+          {% elif eh_dev %}
+          <form method="post" action="/dev/preparar-sala/{{ a.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit"
+                    class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-xs
+                           font-medium text-amber-900 hover:bg-amber-100">
+              [dev] Preparar sala
+            </button>
+          </form>
+          {% else %}
+          <span class="text-xs text-slate-400">O link abre 20 min antes</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if realizados %}
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    Sessões realizadas
+  </h2>
+  <ul class="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+    {% for a in realizados %}
+    <li class="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+      <span class="text-slate-700">
+        {{ a.inicio_utc | data_br }} às {{ a.inicio_utc | hora_br }}
+        <span class="text-slate-400">
+          ·
+          {%- if eh_profissional %} {{ a.paciente.usuario.nome_completo }}
+          {%- else %} {{ a.profissional.nome_exibicao }}{% endif %}
+        </span>
+      </span>
+      {% if not eh_profissional %}
+      <a href="/avaliacao/{{ a.id }}" class="text-teal-700 hover:underline">Avaliar</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endblock %}

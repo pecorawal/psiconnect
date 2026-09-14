@@ -1,0 +1,33 @@
+{# Indicador de progresso do onboarding do profissional. #}
+{% macro passos(atual) %}
+{% set etapas = [
+  ("perfil", "Perfil", "/profissional/perfil"),
+  ("especialidades", "Especialidades", "/profissional/especialidades"),
+  ("agenda", "Agenda", "/profissional/agenda"),
+] %}
+<ol class="mb-8 flex flex-wrap items-center gap-2 text-sm" aria-label="Etapas do cadastro">
+  {% for chave, rotulo, href in etapas %}
+  {% set indice = loop.index %}
+  {% set posicao_atual = etapas | map(attribute=0) | list %}
+  {% set concluida = posicao_atual.index(chave) < posicao_atual.index(atual) %}
+  {% set ativa = chave == atual %}
+  <li class="flex items-center gap-2">
+    <a href="{{ href }}"
+       {% if ativa %}aria-current="step" {% endif %}
+       class="flex items-center gap-2 rounded-lg px-3 py-1.5
+              {% if ativa %}bg-teal-50 font-medium text-teal-800
+              {% elif concluida %}text-teal-700 hover:bg-slate-100
+              {% else %}text-slate-500 hover:bg-slate-100{% endif %}">
+      <span class="grid h-6 w-6 place-items-center rounded-full text-xs font-semibold
+                   {% if ativa %}bg-teal-700 text-white
+                   {% elif concluida %}bg-teal-100 text-teal-800
+                   {% else %}bg-slate-200 text-slate-600{% endif %}">
+        {%- if concluida -%}✓{%- else -%}{{ indice }}{%- endif -%}
+      </span>
+      {{ rotulo }}
+    </a>
+    {% if not loop.last %}<span class="text-slate-300" aria-hidden="true">›</span>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endmacro %}

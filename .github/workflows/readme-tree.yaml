@@ -20,6 +20,9 @@ jobs:
 
       - name: Generate README Tree
         uses: RavelloH/readme-tree@latest
+        with:
+          # Sem isto a árvore inclui .venv/ e tools/ e o README fica ilegível.
+          ignore: '.venv|venv|tools|pgdata|node_modules|__pycache__|.ruff_cache|.mypy_cache|.pytest_cache|htmlcov|storage_local'
 
       - name: Commit and Push changes
         uses: EndBug/add-and-commit@v9

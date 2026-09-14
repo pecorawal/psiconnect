@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block titulo %}Escolher horário{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-3xl px-4 py-12">
+  <a href="{{ url_for('profissionais') }}" class="text-sm text-teal-700 hover:underline">
+    ← Voltar aos profissionais
+  </a>
+
+  <div class="mt-4 flex items-center gap-4">
+    {% if perfil.foto_url %}
+    <img src="{{ perfil.foto_url }}" alt="" class="h-14 w-14 rounded-full object-cover">
+    {% else %}
+    <span aria-hidden="true"
+          class="grid h-14 w-14 place-items-center rounded-full bg-teal-100 text-lg
+                 font-semibold text-teal-800">{{ perfil.nome_exibicao[0] }}</span>
+    {% endif %}
+    <div>
+      <h1 class="text-xl font-bold text-slate-900">{{ perfil.nome_exibicao }}</h1>
+      <p class="text-sm text-slate-500">
+        {{ perfil.registro_completo }} · sessões de {{ duracao }} minutos
+      </p>
+    </div>
+  </div>
+
+  {% if not por_dia %}
+  <div class="mt-10 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+    <p class="text-slate-600">
+      Este profissional não tem horários livres nas próximas semanas.
+    </p>
+    <a href="{{ url_for('profissionais') }}"
+       class="mt-4 inline-block rounded-xl bg-teal-700 px-5 py-2.5 font-medium text-white">
+      Ver outros profissionais
+    </a>
+  </div>
+  {% else %}
+
+  <p class="mt-8 text-sm text-slate-600">
+    Escolha o melhor horário para você. Ele fica reservado enquanto você conclui o pagamento.
+  </p>
+
+  <div class="mt-6 space-y-6">
+    {% for dia, slots in por_dia.items() %}
+    <div>
+      <h2 class="mb-3 text-sm font-semibold text-slate-900">
+        {{ slots[0].inicio_utc | data_extenso }}
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        {% for slot in slots %}
+        <form method="post" action="/paciente/agendar/{{ perfil.usuario_id }}" class="contents">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="inicio" value="{{ slot.inicio_utc.isoformat() }}">
+          <input type="hidden" name="especialidade_id"
+                 value="{{ oferta.especialidade_id }}">
+          <button type="submit"
+                  class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
+                         tabular-nums text-slate-800 transition hover:border-teal-600
+                         hover:bg-teal-50 hover:text-teal-900 focus:outline-none
+                         focus:ring-2 focus:ring-teal-600/30">
+            {{ slot.inicio_utc | hora_br }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

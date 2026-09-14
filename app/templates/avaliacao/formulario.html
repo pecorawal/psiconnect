@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import botao %}
+{% block titulo %}Como foi sua sessão?{% endblock %}
+
+{% macro escala(nome, pergunta, ajuda, rotulos) %}
+<fieldset class="rounded-2xl border border-slate-200 bg-white p-5">
+  <legend class="px-2 text-sm font-semibold text-slate-900">{{ pergunta }}</legend>
+  {% if ajuda %}<p class="mb-4 text-sm text-slate-500">{{ ajuda }}</p>{% endif %}
+  <div class="flex flex-wrap gap-2">
+    {% for n in [1, 2, 3, 4, 5] %}
+    <label class="flex-1 cursor-pointer">
+      <input type="radio" name="{{ nome }}" value="{{ n }}" required class="peer sr-only">
+      <span class="block rounded-xl border border-slate-300 px-3 py-3 text-center text-sm
+                   transition hover:border-teal-400 peer-checked:border-teal-600
+                   peer-checked:bg-teal-50 peer-checked:font-medium peer-checked:text-teal-900
+                   peer-focus-visible:ring-2 peer-focus-visible:ring-teal-600/40">
+        <span class="block text-lg">{{ n }}</span>
+        <span class="mt-0.5 block text-xs text-slate-500">{{ rotulos[n - 1] }}</span>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+</fieldset>
+{% endmacro %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-2xl px-4 py-12">
+  <h1 class="text-2xl font-bold text-slate-900">Como foi sua sessão?</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Três perguntas rápidas sobre a sessão de
+    {{ agendamento.inicio_utc | data_br }} com
+    {{ agendamento.profissional.nome_exibicao }}.
+    Suas respostas ajudam a manter a qualidade da plataforma.
+  </p>
+
+  <form method="post" action="/avaliacao/{{ agendamento.id }}" class="mt-8 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ escala("nota_plataforma", "1. Como foi usar a plataforma?",
+              "Entrar na sala, o vídeo, o agendamento.",
+              ["ruim", "fraca", "ok", "boa", "ótima"]) }}
+
+    {{ escala("nota_profissional", "2. Como foi o atendimento do profissional?",
+              "Acolhimento, escuta, condução da sessão.",
+              ["ruim", "fraco", "ok", "bom", "ótimo"]) }}
+
+    {{ escala("nota_proprio_cuidado", "3. Como você se sente em relação ao seu cuidado?",
+              "Esta é sobre você — não sobre a plataforma nem sobre o profissional.",
+              ["muito mal", "mal", "neutro", "bem", "muito bem"]) }}
+
+    <div class="space-y-1.5">
+      <label for="comentario_profissional" class="block text-sm font-medium text-slate-700">
+        Quer contar mais alguma coisa? <span class="text-slate-400">(opcional)</span>
+      </label>
+      <textarea id="comentario_profissional" name="comentario_profissional" rows="3"
+                class="w-full rounded-xl border border-slate-300 px-4 py-2.5
+                       focus:border-teal-600 focus:outline-none focus:ring-2
+                       focus:ring-teal-600/20"></textarea>
+    </div>
+
+    <div class="flex items-center gap-4 pt-2">
+      {{ botao("Enviar avaliação") }}
+      <span class="text-xs text-slate-500">Você ganha pontos ao avaliar.</span>
+    </div>
+  </form>
+</section>
+{% endblock %}

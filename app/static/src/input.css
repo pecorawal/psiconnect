@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Tailwind v4 escaneia os templates a partir daqui. */
+@source "../../templates/**/*.html";
+@source "../js/**/*.js";
+
+@theme {
+  --font-sans: "Inter var", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  /* Respeita quem pediu menos animação no sistema. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Foco visível e consistente: navegação por teclado é requisito de
+     acessibilidade, não detalhe. */
+  :focus-visible {
+    outline: 2px solid var(--color-teal-600);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Indicador de carregamento do HTMX: escondido até haver requisição em voo. */
+  .htmx-indicator {
+    opacity: 0;
+    transition: opacity 150ms ease-in;
+  }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator {
+    opacity: 1;
+  }
+
+  /* Marca campos que o servidor apontou como inválidos (via erro de domínio). */
+  .campo-invalido {
+    border-color: var(--color-rose-400);
+    background-color: var(--color-rose-50);
+  }
+}

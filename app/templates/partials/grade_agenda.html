@@ -1,0 +1,39 @@
+{# Grade semanal de disponibilidade. Alvo dos swaps HTMX de adicionar/remover. #}
+<div id="grade" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  {% for indice in range(7) %}
+  {% set janelas = por_dia.get(indice, []) %}
+  <div class="rounded-2xl border border-slate-200 bg-white p-4
+              {% if not janelas %}border-dashed bg-slate-50/50 {% endif %}">
+    <h2 class="text-sm font-semibold text-slate-900">
+      {{ dias_semana[indice] | capitalize }}
+    </h2>
+
+    {% if janelas %}
+    <ul class="mt-3 space-y-2">
+      {% for j in janelas %}
+      <li class="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2
+                 text-sm text-teal-900">
+        <span class="tabular-nums">
+          {{ j.inicio_min | hhmm }} – {{ j.fim_min | hhmm }}
+        </span>
+        <button type="button"
+                hx-delete="/profissional/agenda/{{ j.id }}"
+                hx-target="#grade"
+                hx-swap="outerHTML"
+                aria-label="Remover {{ j.inicio_min | hhmm }} às {{ j.fim_min | hhmm }} de {{ dias_semana[indice] }}"
+                class="rounded px-1.5 text-teal-700 hover:bg-teal-100 hover:text-teal-900">
+          &times;
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="mt-3 text-xs text-slate-500">
+      {% set total = janelas | sum(attribute="duracao_min") %}
+      {{ (total // 60) }}h{{ '%02d' % (total % 60) if total % 60 else '' }} disponíveis
+    </p>
+    {% else %}
+    <p class="mt-3 text-xs text-slate-400">Sem atendimento</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>

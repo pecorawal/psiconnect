@@ -1,0 +1,109 @@
+{% extends "admin/base_admin.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Papéis e permissões{% endblock %}
+
+{% block admin_conteudo %}
+<h1 class="text-2xl font-bold text-slate-900">Papéis e permissões</h1>
+<p class="mt-2 text-sm text-slate-600">
+  Cada papel define, por módulo, o que a pessoa pode fazer. Módulo sem nenhuma
+  marcação significa <strong>sem acesso</strong> — a ausência já é a negativa.
+</p>
+
+{% if request.query_params.get("salvo") or request.query_params.get("criado") %}
+<p role="status" class="mt-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm
+                        text-teal-900">Permissões salvas.</p>
+{% endif %}
+
+{% for papel in papeis %}
+{% set marcadas = {} %}
+{% for p in papel.permissoes %}{% set _ = marcadas.update({p.modulo: p}) %}{% endfor %}
+
+<section class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200
+                 bg-slate-50 px-5 py-4">
+    <div>
+      <h2 class="font-semibold text-slate-900">
+        {{ papel.nome }}
+        {% if papel.sistema %}
+        <span class="ml-1 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-normal text-slate-700">
+          do sistema
+        </span>
+        {% endif %}
+      </h2>
+      {% if papel.descricao %}
+      <p class="mt-0.5 text-sm text-slate-600">{{ papel.descricao }}</p>
+      {% endif %}
+    </div>
+    {% if papel.sistema %}
+    <span class="text-xs text-slate-500">Não pode ser alterado nem excluído</span>
+    {% elif pode_editar %}
+    <button type="button"
+            hx-delete="/admin/papeis/{{ papel.id }}"
+            hx-target="body" hx-swap="outerHTML"
+            hx-confirm="Excluir o papel {{ papel.nome }}?"
+            class="rounded-lg px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">
+      Excluir
+    </button>
+    {% endif %}
+  </header>
+
+  <form hx-patch="/admin/papeis/{{ papel.id }}/permissoes">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[36rem] text-sm">
+        <thead class="border-b border-slate-100 text-left text-slate-600">
+          <tr>
+            <th scope="col" class="px-5 py-2.5 font-medium">Módulo</th>
+            {% for op in operacoes %}
+            <th scope="col" class="px-3 py-2.5 text-center font-medium">
+              {{ rotulos_operacao[op] }}
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          {% for modulo in modulos %}
+          {% set atual = marcadas.get(modulo) %}
+          <tr>
+            <th scope="row" class="px-5 py-2.5 text-left font-normal text-slate-800">
+              {{ rotulos_modulo.get(modulo, modulo) }}
+            </th>
+            {% for op in operacoes %}
+            {% set coluna = {"create": "pode_criar", "read": "pode_ler",
+                             "update": "pode_atualizar", "delete": "pode_deletar"}[op] %}
+            <td class="px-3 py-2.5 text-center">
+              <input type="checkbox" name="perm_{{ modulo }}_{{ op }}" value="1"
+                     {% if atual and atual[coluna] %}checked {% endif %}
+                     {% if papel.sistema or not pode_editar %}disabled {% endif %}
+                     aria-label="{{ rotulos_operacao[op] }} em {{ rotulos_modulo.get(modulo, modulo) }}"
+                     class="h-4 w-4 rounded border-slate-300 text-teal-700
+                            focus:ring-2 focus:ring-teal-600/30 disabled:opacity-40">
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if not papel.sistema and pode_editar %}
+    <div class="border-t border-slate-100 px-5 py-3">{{ botao("Salvar permissões") }}</div>
+    {% endif %}
+  </form>
+</section>
+{% endfor %}
+
+{% if pode_editar %}
+<section class="mt-12 rounded-2xl border border-slate-200 bg-white p-5">
+  <h2 class="font-semibold text-slate-900">Novo papel</h2>
+  <form method="post" action="{{ url_for('admin_criar_papel') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {{ campo("nome", "Nome", requerido=true, placeholder="Ex.: Recepção") }}
+    {{ campo("descricao", "Descrição", placeholder="O que este papel faz") }}
+    <p class="text-xs text-slate-500">
+      O papel nasce sem nenhuma permissão. Marque-as depois de criá-lo.
+    </p>
+    {{ botao("Criar papel") }}
+  </form>
+</section>
+{% endif %}
+{% endblock %}

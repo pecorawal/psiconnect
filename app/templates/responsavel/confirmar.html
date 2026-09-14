@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, botao %}
+{% block titulo %}Autorizar atendimento{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-xl px-4 py-12">
+  <h1 class="text-2xl font-bold text-slate-900">Autorizar atendimento</h1>
+  <p class="mt-2 text-slate-600">
+    Olá, {{ verificacao.responsavel_nome.split()[0] }}.
+    {% if menor %}
+    <strong>{{ menor.usuario.nome_completo.split()[0] }}</strong> pediu atendimento
+    psicológico no PsiConnect e informou você como responsável.
+    {% endif %}
+  </p>
+
+  <div class="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm">
+    <div class="flex gap-3">
+      <span aria-hidden="true" class="text-lg">🔒</span>
+      <p class="text-slate-700">
+        O documento que você enviar é guardado <strong>criptografado</strong> — nem
+        quem opera a infraestrutura consegue abri-lo.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <span aria-hidden="true" class="text-lg">👁️</span>
+      <p class="text-slate-700">
+        Só <strong>você</strong> e um administrador autorizado podem visualizá-lo, e
+        todo acesso fica registrado.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <span aria-hidden="true" class="text-lg">🗑️</span>
+      <p class="text-slate-700">
+        Depois de conferido, <strong>a imagem é apagada</strong>. Fica só o registro de
+        que houve verificação.
+      </p>
+    </div>
+    <div class="flex gap-3">
+      <span aria-hidden="true" class="text-lg">🤐</span>
+      <p class="text-slate-700">
+        Autorizar <strong>não</strong> dá acesso ao conteúdo das sessões — ele é
+        protegido por sigilo profissional.
+      </p>
+    </div>
+  </div>
+
+  <form method="post" action="/responsavel/confirmar/{{ token }}"
+        enctype="multipart/form-data" class="mt-8 space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="space-y-1.5">
+      <label for="documento_tipo" class="block text-sm font-medium text-slate-700">
+        Tipo de documento <span class="text-rose-600" aria-hidden="true">*</span>
+      </label>
+      <select id="documento_tipo" name="documento_tipo" required
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5
+                     focus:border-teal-600 focus:outline-none focus:ring-2
+                     focus:ring-teal-600/20">
+        {% set rotulos = {"RG": "RG", "CNH": "CNH", "PASSAPORTE": "Passaporte",
+                          "CERTIDAO_NASCIMENTO": "Certidão de nascimento", "OUTRO": "Outro"} %}
+        {% for t in tipos_documento %}
+        <option value="{{ t.value }}">{{ rotulos.get(t.value, t.value) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {{ campo("documento_numero", "Número do documento", requerido=true,
+             ajuda="Guardamos apenas os últimos dígitos depois da verificação.") }}
+
+    <div class="space-y-1.5">
+      <label for="documento" class="block text-sm font-medium text-slate-700">
+        Foto ou PDF do documento <span class="text-rose-600" aria-hidden="true">*</span>
+      </label>
+      <input type="file" id="documento" name="documento" required
+             accept="image/jpeg,image/png,image/webp,application/pdf"
+             class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
+                    file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3
+                    file:py-1.5 file:text-teal-800">
+      <p class="text-xs text-slate-500">JPEG, PNG, WEBP ou PDF, até 8 MB.</p>
+    </div>
+
+    <div class="rounded-xl border-2 border-teal-200 bg-teal-50/60 p-4">
+      <label class="flex items-start gap-3 text-sm text-slate-800">
+        <input type="checkbox" name="autorizo" value="1" required
+               class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-700
+                      focus:ring-2 focus:ring-teal-600/30">
+        <span>
+          Declaro que sou o <strong>responsável legal</strong>
+          {% if menor %}por {{ menor.usuario.nome_completo }}{% endif %}
+          e <strong>autorizo</strong> o atendimento e o tratamento dos dados de saúde
+          necessários, nos termos do
+          <a href="/termos/responsavel" target="_blank"
+             class="font-medium text-teal-700 underline">consentimento do responsável</a>.
+          <span class="mt-1 block text-xs text-slate-600">
+            Você pode revogar esta autorização a qualquer momento.
+          </span>
+        </span>
+      </label>
+    </div>
+
+    {{ botao("Autorizar atendimento") }}
+  </form>
+
+  <p class="mt-6 text-center text-xs text-slate-500">
+    Este link é pessoal e expira em {{ verificacao.expira_em | data_br }}.
+  </p>
+</section>
+{% endblock %}

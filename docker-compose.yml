@@ -1,0 +1,67 @@
+name: psiconnect
+
+services:
+  db:
+    # Imagem oficial pgvector. btree_gist (necessária para as constraints
+    # EXCLUDE de agenda) já vem no contrib do Postgres.
+    image: pgvector/pgvector:0.8.6-pg17
+    container_name: psiconnect-db
+    environment:
+      POSTGRES_USER: psiconnect
+      POSTGRES_PASSWORD: psiconnect
+      POSTGRES_DB: psiconnect
+      # Melhora o desempenho local; não usar em produção.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      # 5433 no host evita colidir com um Postgres já instalado.
+      - "5433:5432"
+    volumes:
+      # Volume nomeado, não bind-mount: com podman rootless o uid do postgres
+      # dentro do container não consegue escrever num diretório do host.
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psiconnect -d psiconnect"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  mailpit:
+    # SMTP fake para dev: captura os e-mails da outbox sem enviar nada.
+    image: axllent/mailpit:latest
+    container_name: psiconnect-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # UI web
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    restart: unless-stopped
+
+  minio:
+    # Object storage S3-compatível. Guarda foto de perfil e documentos de
+    # identificação — o bucket é PRIVADO e a autorização é da aplicação.
+    image: quay.io/minio/minio:latest
+    container_name: psiconnect-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: psiconnect
+      MINIO_ROOT_PASSWORD: psiconnect-dev-secret
+    ports:
+      # 9010/9011 em vez de 9000/9001: o padrão colide com outros projetos que
+      # já rodam MinIO na mesma máquina.
+      - "9010:9000"  # API S3
+      - "9011:9001"  # console web
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:

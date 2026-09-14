@@ -1,0 +1,138 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "psiconnect"
+version = "0.1.0"
+description = "Plataforma de conexão entre psicólogos e pacientes"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "Proprietary" }
+
+dependencies = [
+  # --- Web ---------------------------------------------------------------
+  "fastapi>=0.141,<0.142",
+  "uvicorn[standard]>=0.52,<0.53",
+  "jinja2>=3.1.6,<4",
+  "python-multipart>=0.0.32",
+  "itsdangerous>=2.2",
+  # --- Persistência ------------------------------------------------------
+  # psycopg 3 serve os dois mundos: async na app e sync no Alembic. Evita a
+  # mistura psycopg2 + asyncpg.
+  "sqlalchemy[asyncio]>=2.0.52,<2.1",
+  "psycopg[binary,pool]>=3.3,<4",
+  "pgvector>=0.5,<0.6",
+  "alembic>=1.19,<2",
+  # --- Configuração e validação -----------------------------------------
+  "pydantic>=2.13,<3",
+  "pydantic-settings>=2.15,<3",
+  # --- Segurança ---------------------------------------------------------
+  # pwdlib (Argon2id), NÃO passlib: passlib 1.7.4 lê bcrypt.__about__, atributo
+  # removido no bcrypt 4.1. Ver docs/adr/0007-pwdlib-argon2.md
+  "pwdlib[argon2]>=0.3.1,<0.4",
+  "cryptography>=44",
+  # --- Integrações e infra -----------------------------------------------
+  "httpx>=0.28,<0.29",
+  "tenacity>=9.1",
+  "structlog>=26.1",
+  "python-dateutil>=2.9",
+  "pillow>=11",
+]
+
+[project.optional-dependencies]
+pagamentos = ["mercadopago>=3.5,<4"]
+#: Object storage S3-compatível (MinIO). Ver ADR 0008.
+armazenamento = ["boto3>=1.35"]
+ia = ["openai>=2.0"]
+ia-local = ["faster-whisper>=1.1", "sentence-transformers>=3.3"]
+dev = [
+  "pytest>=9.1",
+  "pytest-asyncio>=1.4",
+  "pytest-cov>=7.1",
+  "testcontainers[postgres]>=4.15",
+  "respx>=0.23",
+  "time-machine>=3.4",
+  "hypothesis>=6.120",
+  "beautifulsoup4>=4.15",
+  "ruff>=0.16",
+  "mypy>=2.3",
+  "pre-commit>=4.6",
+  "types-python-dateutil",
+]
+
+[project.scripts]
+psiconnect-worker = "app.workers.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+# pytest-asyncio 1.x exige modo explícito; sem isso testes async não rodam.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  "unit: regras puras, sem I/O",
+  "db: exige Postgres",
+  "servicos: casos de uso com providers fake",
+  "web: rotas HTML/HTMX",
+  "api: rotas JSON e webhooks",
+  "contrato: contract tests de providers",
+  "e2e: fluxo completo",
+  "lento: excluído do ciclo rápido",
+]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "S", "DTZ", "RUF"]
+# O código é documentado em português com tipografia correta: travessão (–),
+# sinal de menos (−) e multiplicação (×) são intencionais, não homoglifos
+# acidentais. RUF001/002/003 sinalizariam todos como suspeitos.
+allowed-confusables = ["–", "—", "−", "×", "≤", "≥", "→"]
+# DTZ é intencional: proíbe datetime.now()/utcnow() naive. O bug de fuso do
+# spike anterior não passa no CI.
+ignore = [
+  "S101", # assert é legítimo em testes
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+"alembic/versions/*" = ["E501"]
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = []
+exclude = ["^alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = ["pgvector.*", "mercadopago.*", "testcontainers.*", "boto3.*", "botocore.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/seeds/demo.py", "app/workers/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "\\.\\.\\.",
+]

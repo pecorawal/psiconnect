@@ -1,0 +1,137 @@
+{% set rotulo_status = {
+  "APROVADO": "Recebido",
+  "PENDENTE": "Aguardando",
+  "CRIADO": "Aguardando",
+  "RECUSADO": "Recusado",
+  "ESTORNADO": "Estornado",
+  "CANCELADO": "Cancelado",
+  "EXPIRADO": "Expirado",
+} %}
+{% set cor_status = {
+  "APROVADO": "bg-teal-100 text-teal-900",
+  "PENDENTE": "bg-amber-100 text-amber-900",
+  "CRIADO": "bg-amber-100 text-amber-900",
+  "RECUSADO": "bg-rose-100 text-rose-900",
+  "ESTORNADO": "bg-slate-200 text-slate-700",
+  "CANCELADO": "bg-slate-200 text-slate-700",
+  "EXPIRADO": "bg-slate-200 text-slate-700",
+} %}
+
+<div id="extrato">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Você recebeu</p>
+      <p class="mt-1 text-3xl font-bold text-teal-800">{{ resumo.liquido_centavos | brl }}</p>
+      <p class="mt-1 text-xs text-slate-500">
+        de {{ resumo.bruto_centavos | brl }} cobrados
+        {%- if resumo.quantidade_pagamentos %}
+        em {{ resumo.quantidade_pagamentos }}
+        {{ "pagamento" if resumo.quantidade_pagamentos == 1 else "pagamentos" }}
+        {%- endif %}
+      </p>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-5">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Descontos</p>
+      <dl class="mt-2 space-y-1 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-slate-600">Taxa do meio de pagamento</dt>
+          <dd class="text-slate-900">{{ resumo.taxa_provedor_centavos | brl }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-slate-600">Comissão da plataforma</dt>
+          <dd class="text-slate-900">{{ resumo.comissao_plataforma_centavos | brl }}</dd>
+        </div>
+        {% if resumo.imposto_retido_centavos %}
+        <div class="flex justify-between">
+          <dt class="text-slate-600">Imposto retido</dt>
+          <dd class="text-slate-900">{{ resumo.imposto_retido_centavos | brl }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex justify-between border-t border-slate-100 pt-1 font-medium">
+          <dt class="text-slate-700">Total retido</dt>
+          <dd class="text-slate-900">{{ resumo.percentual_efetivo }}%</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  {% if resumo.sessoes_a_entregar %}
+  {# Dinheiro de pacote entra todo na compra, mas o trabalho ainda é devido.
+     Sem este aviso, o profissional lê o recebido como receita realizada. #}
+  <div class="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-5">
+    <p class="text-sm text-amber-900">
+      <strong>{{ resumo.sessoes_a_entregar }}
+      {{ "sessão já paga" if resumo.sessoes_a_entregar == 1 else "sessões já pagas" }}
+      {{ "aguarda" if resumo.sessoes_a_entregar == 1 else "aguardam" }} atendimento.</strong>
+      Pacientes que compraram pacote já pagaram por elas — parte do valor acima
+      corresponde a atendimentos ainda por fazer.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if resumo.pendente_centavos %}
+  <p class="mt-4 text-sm text-slate-600">
+    {{ resumo.pendente_centavos | brl }} em cobranças ainda não pagas (Pix aguardando
+    ou cartão em análise). Não entram no total acima.
+  </p>
+  {% endif %}
+
+  <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
+    Lançamentos
+  </h2>
+
+  {% if not movimentos %}
+  <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+    <p class="text-slate-600">Nenhum lançamento neste mês.</p>
+  </div>
+  {% else %}
+  <div class="mt-4 overflow-x-auto">
+    <table class="w-full min-w-[38rem] border-collapse text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-left text-xs uppercase text-slate-500">
+          <th scope="col" class="py-2 pr-3 font-medium">Data</th>
+          <th scope="col" class="py-2 pr-3 font-medium">Paciente</th>
+          <th scope="col" class="py-2 pr-3 text-right font-medium">Cobrado</th>
+          <th scope="col" class="py-2 pr-3 text-right font-medium">Descontos</th>
+          <th scope="col" class="py-2 pr-3 text-right font-medium">Você recebe</th>
+          <th scope="col" class="py-2 font-medium">Situação</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for m in movimentos %}
+        <tr>
+          <td class="py-3 pr-3 whitespace-nowrap text-slate-700">
+            {{ m.data | data_br if m.data else "—" }}
+          </td>
+          <td class="py-3 pr-3">
+            <span class="text-slate-900">{{ m.paciente_nome }}</span>
+            <span class="block text-xs text-slate-500">
+              {{ m.especialidade_nome }}
+              {%- if m.quantidade_sessoes > 1 %}
+              · pacote de {{ m.quantidade_sessoes }}
+              {%- endif %}
+            </span>
+          </td>
+          <td class="py-3 pr-3 text-right whitespace-nowrap text-slate-700">
+            {{ m.bruto_centavos | brl }}
+          </td>
+          <td class="py-3 pr-3 text-right whitespace-nowrap text-slate-500">
+            −{{ (m.taxa_provedor_centavos + m.comissao_centavos) | brl }}
+          </td>
+          <td class="py-3 pr-3 text-right whitespace-nowrap font-medium text-slate-900">
+            {{ m.liquido_centavos | brl }}
+          </td>
+          <td class="py-3">
+            <span class="rounded-full px-2.5 py-0.5 text-xs
+                         {{ cor_status.get(m.status.value, 'bg-slate-100 text-slate-700') }}">
+              {{ rotulo_status.get(m.status.value, m.status.value) }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>

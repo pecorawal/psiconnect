@@ -1,0 +1,33 @@
+{# Fragmento do lobby, trocado a cada polling. #}
+<div>
+  <div aria-hidden="true"
+       class="mx-auto grid h-20 w-20 place-items-center rounded-full
+              {% if estado.profissional_presente %}bg-teal-100{% else %}bg-slate-100{% endif %}">
+    <span class="text-3xl">
+      {%- if estado.paciente_admitido -%}✓
+      {%- elif estado.profissional_presente -%}👋
+      {%- else -%}⏳{%- endif -%}
+    </span>
+  </div>
+
+  <h1 class="mt-6 text-xl font-semibold text-slate-900">
+    {% if estado.paciente_admitido %}Entrando na sala…
+    {% elif estado.profissional_presente %}Quase lá
+    {% else %}Sala de espera{% endif %}
+  </h1>
+
+  <p role="status" class="mt-2 text-slate-600">{{ estado.mensagem }}</p>
+
+  {% if not estado.paciente_admitido %}
+  <div class="mt-6 flex justify-center gap-1.5" aria-hidden="true">
+    {% for _ in range(3) %}
+    <span class="h-2 w-2 animate-pulse rounded-full bg-teal-500"
+          style="animation-delay: {{ loop.index0 * 0.2 }}s"></span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="mt-8 text-xs text-slate-500">
+    Mantenha esta página aberta. Você entra automaticamente quando o profissional admitir.
+  </p>
+</div>

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "componentes/campo.html" import campo, area_texto, botao %}
+{% from "componentes/passos.html" import passos %}
+{% block titulo %}Seu perfil{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-2xl px-4 py-12">
+  {{ passos("perfil") }}
+
+  <h1 class="text-2xl font-bold text-slate-900">Seu perfil profissional</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    É o que o paciente vê antes de escolher você. Capriche na descrição.
+  </p>
+
+  <form method="post" action="{{ url_for('perfil_profissional') }}"
+        enctype="multipart/form-data" class="mt-8 space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    {{ campo("nome_exibicao", "Nome de exibição", requerido=true,
+             valor=(perfil.nome_exibicao if perfil else usuario.nome_completo),
+             ajuda="Como você quer aparecer para os pacientes.") }}
+
+    <div class="grid gap-5 sm:grid-cols-[1fr_1fr_5rem]">
+      <div class="space-y-1.5">
+        <label for="conselho" class="block text-sm font-medium text-slate-700">
+          Conselho <span class="text-rose-600" aria-hidden="true">*</span>
+        </label>
+        <select id="conselho" name="conselho" required
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5
+                       focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20">
+          {% for c in conselhos %}
+          <option value="{{ c.value }}"
+                  {% if perfil and perfil.conselho == c %}selected {% endif %}>{{ c.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {{ campo("registro_numero", "Número do registro", requerido=true,
+               valor=(perfil.registro_numero if perfil else ""), placeholder="123456") }}
+      {{ campo("registro_uf", "UF", requerido=true, maxlength="2",
+               valor=(perfil.registro_uf if perfil else ""), placeholder="SP") }}
+    </div>
+
+    <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+      Verificamos seu registro no cadastro público do conselho antes de liberar seu perfil.
+      Você declara possuir registro <strong>ativo</strong> e ter avaliado a adequação do
+      atendimento a distância aos casos que atenderá (Res. CFP 9/2024).
+    </div>
+
+    <div class="space-y-1.5">
+      <label for="foto" class="block text-sm font-medium text-slate-700">Foto de perfil</label>
+      {% if perfil and perfil.foto_url %}
+      <img src="{{ perfil.foto_url }}" alt="Sua foto atual"
+           class="mb-2 h-24 w-24 rounded-full object-cover ring-2 ring-slate-200">
+      {% endif %}
+      <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/webp"
+             class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
+                    file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3
+                    file:py-1.5 file:text-teal-800">
+      <p class="text-xs text-slate-500">
+        JPEG, PNG ou WEBP, até 5 MB. Removemos os metadados da imagem antes de publicá-la.
+      </p>
+    </div>
+
+    {# maxlength no input dá o feedback imediato; o CHECK do banco é a garantia. #}
+    {{ area_texto("descricao", "Sobre o seu trabalho", requerido=true, maxlength="500", linhas=6,
+                  valor=(perfil.descricao if perfil else ""),
+                  ajuda="Até 500 caracteres. Conte como você trabalha e com quem.",
+                  extra='oninput="document.getElementById(\'contador\').textContent = this.value.length"') }}
+    <p class="-mt-4 text-right text-xs text-slate-500">
+      <span id="contador">{{ (perfil.descricao | length) if perfil and perfil.descricao else 0 }}</span>/500
+    </p>
+
+    <div class="flex items-center gap-3 pt-2">
+      {{ botao("Salvar e continuar") }}
+      <a href="{{ url_for('simulador') }}" class="text-sm text-teal-700 hover:underline">
+        Ver quanto eu recebo →
+      </a>
+    </div>
+  </form>
+</section>
+{% endblock %}

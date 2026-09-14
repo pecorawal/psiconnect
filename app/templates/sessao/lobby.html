@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Sala de espera{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-16 text-center">
+  {# O estado chega por SSE (js/lobby-sse.js). O fragmento já vem renderizado
+     daqui porque o plano B -- polling de 2s sobre /estado, o comportamento da
+     Fase 1 -- é ligado pelo próprio script quando o SSE não existe ou cai. #}
+  <div id="lobby"
+       data-eventos="/sessao/{{ agendamento_id }}/eventos"
+       data-estado="/sessao/{{ agendamento_id }}/estado">
+    {% include "partials/estado_lobby.html" %}
+  </div>
+
+  <p id="lobby-reconectando" hidden role="status"
+     class="mt-6 text-xs text-amber-700">
+    Conexão instável. Tentando reconectar…
+  </p>
+
+  <a href="/painel" class="mt-10 inline-block text-sm text-slate-500 hover:text-slate-700">
+    Sair da sala de espera
+  </a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='js/lobby-sse.js') }}" defer></script>
+{% endblock %}

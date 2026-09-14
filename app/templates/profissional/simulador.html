@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Quanto você recebe{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-2xl px-4 py-12">
+  <h1 class="text-2xl font-bold text-slate-900">Quanto você recebe</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Digite o valor da sessão e veja o líquido em cada forma de pagamento, já
+    descontados a comissão da plataforma e a taxa do meio de pagamento.
+  </p>
+
+  <form class="mt-6 flex items-end gap-3"
+        hx-get="{{ url_for('simulador') }}"
+        hx-trigger="input changed delay:400ms from:#valor, submit"
+        hx-target="#resultado"
+        hx-swap="innerHTML">
+    <div class="space-y-1.5">
+      <label for="valor" class="block text-sm font-medium text-slate-700">Valor da sessão</label>
+      <div class="flex items-center gap-2">
+        <span class="text-slate-500">R$</span>
+        <input type="text" id="valor" name="valor" value="{{ valor }}" inputmode="decimal"
+               class="w-32 rounded-xl border border-slate-300 px-4 py-2.5
+                      focus:border-teal-600 focus:outline-none focus:ring-2
+                      focus:ring-teal-600/20">
+      </div>
+    </div>
+  </form>
+
+  <div id="resultado" class="mt-8">
+    {% include "partials/simulador_resultado.html" %}
+  </div>
+
+  <p class="mt-8 text-xs text-slate-500">
+    As taxas do meio de pagamento são estimativas de mercado e podem variar conforme o
+    prazo de liberação e o parcelamento. Impostos sobre o seu recebimento são de sua
+    responsabilidade e não estão inclusos.
+  </p>
+</section>
+{% endblock %}

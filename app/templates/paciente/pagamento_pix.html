@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titulo %}Aguardando pagamento{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-md px-4 py-12 text-center">
+  <h1 class="text-2xl font-bold text-slate-900">Pague com Pix para confirmar</h1>
+  <p class="mt-2 text-sm text-slate-600">
+    Assim que o pagamento for identificado, sua consulta é confirmada automaticamente.
+  </p>
+
+  {% if pagamento.pix_qrcode %}
+  <img src="{{ pagamento.pix_qrcode }}" alt="QR Code do Pix"
+       class="mx-auto mt-8 h-48 w-48 rounded-xl border border-slate-200 bg-white p-2">
+  {% endif %}
+
+  <p class="mt-6 text-2xl font-bold text-slate-900">
+    {{ pagamento.valor_bruto_centavos | brl }}
+  </p>
+
+  {% if pagamento.pix_copia_cola %}
+  <div class="mt-6 text-left">
+    <label for="copia-cola" class="block text-sm font-medium text-slate-700">
+      Pix copia e cola
+    </label>
+    <div class="mt-1.5 flex gap-2">
+      <input id="copia-cola" type="text" readonly value="{{ pagamento.pix_copia_cola }}"
+             class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2
+                    font-mono text-xs text-slate-700">
+      <button type="button" onclick="copiar()"
+              class="shrink-0 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm
+                     font-medium text-slate-700 hover:bg-slate-50">
+        Copiar
+      </button>
+    </div>
+    <p id="copiado" class="mt-1 hidden text-xs text-teal-700">Copiado.</p>
+  </div>
+  {% endif %}
+
+  {% if pagamento.pix_expira_em %}
+  <p class="mt-6 text-sm text-slate-500">
+    O código expira às {{ pagamento.pix_expira_em | hora_br }}.
+  </p>
+  {% endif %}
+
+  {% if eh_dev %}
+  <form method="post" action="/dev/confirmar-pix/{{ pagamento.id }}" class="mt-8">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit"
+            class="w-full rounded-xl border border-amber-300 bg-amber-50 px-5 py-2.5
+                   text-sm font-medium text-amber-900 hover:bg-amber-100">
+      [dev] Simular pagamento confirmado
+    </button>
+  </form>
+  {% endif %}
+
+  <a href="/painel" class="mt-6 inline-block text-sm text-teal-700 hover:underline">
+    Ver meus agendamentos
+  </a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function copiar() {
+    var campo = document.getElementById("copia-cola");
+    campo.select();
+    navigator.clipboard.writeText(campo.value).then(function () {
+      document.getElementById("copiado").classList.remove("hidden");
+    });
+  }
+</script>
+{% endblock %}

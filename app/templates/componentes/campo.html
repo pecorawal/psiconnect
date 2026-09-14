@@ -1,0 +1,69 @@
+{# Campo de formulário.
+
+   Uso:
+   {% from "componentes/campo.html" import campo %}
+   {{ campo("email", "E-mail", tipo="email", requerido=true, ajuda="...") }}
+#}
+{% macro campo(nome, rotulo, tipo="text", requerido=false, valor="", ajuda="",
+               placeholder="", autocomplete="", maxlength="", extra="") %}
+<div class="space-y-1.5">
+  <label for="{{ nome }}" class="block text-sm font-medium text-slate-700">
+    {{ rotulo }}{% if requerido %} <span class="text-rose-600" aria-hidden="true">*</span>{% endif %}
+  </label>
+  <input
+    type="{{ tipo }}"
+    id="{{ nome }}"
+    name="{{ nome }}"
+    value="{{ valor }}"
+    {% if requerido %}required {% endif %}
+    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+    {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+    {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+    {% if ajuda %}aria-describedby="{{ nome }}-ajuda"{% endif %}
+    {{ extra | safe }}
+    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900
+           placeholder:text-slate-400 focus:border-teal-600 focus:outline-none
+           focus:ring-2 focus:ring-teal-600/20">
+  {% if ajuda %}
+  <p id="{{ nome }}-ajuda" class="text-xs text-slate-500">{{ ajuda }}</p>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro area_texto(nome, rotulo, requerido=false, valor="", ajuda="", maxlength="", linhas=4, extra="") %}
+<div class="space-y-1.5">
+  <label for="{{ nome }}" class="block text-sm font-medium text-slate-700">
+    {{ rotulo }}{% if requerido %} <span class="text-rose-600" aria-hidden="true">*</span>{% endif %}
+  </label>
+  <textarea
+    id="{{ nome }}"
+    name="{{ nome }}"
+    rows="{{ linhas }}"
+    {% if requerido %}required {% endif %}
+    {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+    {% if ajuda %}aria-describedby="{{ nome }}-ajuda"{% endif %}
+    {{ extra | safe }}
+    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-slate-900
+           placeholder:text-slate-400 focus:border-teal-600 focus:outline-none
+           focus:ring-2 focus:ring-teal-600/20">{{ valor }}</textarea>
+  {% if ajuda %}
+  <p id="{{ nome }}-ajuda" class="text-xs text-slate-500">{{ ajuda }}</p>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro botao(texto, tipo="submit", variante="primario", extra="") %}
+{% set estilos = {
+  "primario": "bg-teal-700 text-white hover:bg-teal-800 focus:ring-teal-600",
+  "secundario": "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-400",
+  "perigo": "bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500",
+} %}
+<button type="{{ tipo }}" {{ extra | safe }}
+        class="rounded-xl px-5 py-2.5 font-medium transition focus:outline-none focus:ring-2
+               focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50
+               {{ estilos.get(variante, estilos['primario']) }}">
+  {{ texto }}
+</button>
+{% endmacro %}

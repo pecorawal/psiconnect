@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block conteudo %}
+<section class="mx-auto w-full max-w-xl px-4 py-24 text-center">
+  <h1 class="text-2xl font-bold text-slate-900">{{ titulo }}</h1>
+  <p class="mt-4 text-slate-600">{{ mensagem }}</p>
+
+  <div class="mt-8 flex justify-center gap-3">
+    <a href="{{ url_for('home') }}"
+       class="rounded-xl bg-teal-700 px-5 py-2.5 font-medium text-white hover:bg-teal-800">
+      Voltar ao início
+    </a>
+    <button type="button" onclick="history.back()"
+            class="rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-medium text-slate-700
+                   hover:bg-slate-50">
+      Voltar
+    </button>
+  </div>
+
+  {% if codigo and eh_dev %}
+  <p class="mt-8 font-mono text-xs text-slate-400">{{ codigo }}</p>
+  {% endif %}
+</section>
+{% endblock %}
