@@ -82,7 +82,7 @@ def api() -> Any:
     with respx.mock as mock:
         mock.post(f"{BASE_URL}/rooms").mock(return_value=httpx.Response(200, json=_sala_criada()))
         mock.post(f"{BASE_URL}/meeting-tokens").mock(
-            return_value=httpx.Response(200, json={"token": "eyJhbGciOi.Zm9v.YmFy"})
+            return_value=httpx.Response(200, json={"token": "eyJhbGciOi.Zm9v.YmFy"})  # notsecret
         )
         mock.delete(f"{BASE_URL}/rooms/{SALA}").mock(
             return_value=httpx.Response(200, json={"deleted": True, "name": SALA})
