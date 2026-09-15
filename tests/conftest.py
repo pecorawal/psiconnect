@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
+import base64
 import os
+import secrets
 from collections.abc import AsyncIterator
 
 import pytest
 
-# Settings previsíveis para toda a suíte, independentes do .env do dev.
+# Settings previsíveis para toda a suíte. As chaves são geradas a cada execução:
+# só precisam existir para assinar cookies e cifrar/decifrar, e assim nenhum
+# valor com cara de segredo fica versionado. O banco vem do ambiente no CI e do
+# .env na máquina do dev (gerado pelo `make env`).
 os.environ.setdefault("APP_ENV", "teste")
-os.environ.setdefault("APP_SECRET_KEY", "chave-de-teste-com-mais-de-32-bytes-ok!")
-os.environ.setdefault(
-    "DATABASE_URL", "postgresql+psycopg://psiconnect:psiconnect@localhost:5433/psiconnect"
-)
-# Chave fixa de teste (32 bytes em base64). Não é segredo: só precisa existir
-# para que cifrar/decifrar funcione na suíte.
-os.environ.setdefault("CHAVE_CRIPTO_TRANSCRICAO", "xJhth3V0AdM4ke77niecNLLC9sdB5qaC4k9zoEzhpG8=")
+os.environ.setdefault("APP_SECRET_KEY", secrets.token_urlsafe(48))
+os.environ.setdefault("CHAVE_CRIPTO_TRANSCRICAO", base64.b64encode(os.urandom(32)).decode())
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import (
