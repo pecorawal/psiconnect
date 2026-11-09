@@ -102,6 +102,14 @@ pelo **188**; em emergência, **192** (SAMU).
 <!-- readme-tree start -->
 ```
 .
+├── .claude
+│   └── skills
+│       ├── proxima-tarefa
+│       │   └── SKILL.md
+│       ├── retomar
+│       │   └── SKILL.md
+│       └── sincronizar
+│           └── SKILL.md
 ├── .env.example
 ├── .github
 │   └── workflows
@@ -110,6 +118,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │       └── readme-tree.yaml
 ├── .gitignore
 ├── .pre-commit-config.yaml
+├── CLAUDE.md
 ├── Makefile
 ├── README.md
 ├── alembic
@@ -337,6 +346,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │   ├── 05-roadmap.md
 │   ├── 06-integracoes.md
 │   ├── 07-glossario.md
+│   ├── BACKLOG.md
 │   ├── README.md
 │   ├── adr
 │   │   ├── 0001-stack-fastapi-htmx.md
@@ -359,6 +369,7 @@ pelo **188**; em emergência, **192** (SAMU).
 ├── scripts
 │   ├── baixar_tailwind.sh
 │   ├── esperar_postgres.sh
+│   ├── gerar_env.py
 │   └── gerar_icones.py
 ├── tests
 │   ├── __init__.py
@@ -405,6 +416,6 @@ pelo **188**; em emergência, **192** (SAMU).
 │       └── test_templates.py
 └── tree.bak
 
-61 directories, 242 files
+66 directories, 248 files
 ```
 <!-- readme-tree end -->
