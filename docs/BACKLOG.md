@@ -22,9 +22,10 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 | # | Item | Prio | Observação |
 |---|---|---|---|
-| E1 | Revisar e mergear o PR automático dev → main com o `852fe8c` | P0 | Confirmar que o GitGuardian ficou verde |
+| E1 | Revisar e mergear o [PR #2](https://github.com/pecorawal/psiconnect/pull/2) dev → main com o `852fe8c` | P0 | CI verde. GitGuardian acusa 2 falsos positivos no `852fe8c` (`docker-compose.yml:12`, interpolação `${POSTGRES_PASSWORD:?...}`; `scripts/gerar_env.py:68`, f-string da `DATABASE_URL`): marcar como *false positive* no painel (incidentes 39875415 e 39875416) e rodar o check de novo |
 | E2 | Rotacionar qualquer valor que tenha ido para o histórico do git antes do `852fe8c` | P1 | Eram só valores de dev/CI, mas continuam no histórico. O `make env` nunca sobrescreve: para gerar novos, apague a linha da chave no `.env` e rode de novo (a senha do Postgres exige recriar o volume) |
-| E3 | Autenticar o `gh` neste PC (`gh auth login`) | P2 | Sem isso não dá para listar PRs/issues pela CLI |
+| E3 | Ligar "Allow GitHub Actions to create and approve pull requests" em Settings → Actions → General | P1 | Desligada: o `auto-pr-dev.yaml` falha com `not permitted to create or approve pull requests` e só emite um aviso. O PR #2 foi aberto à mão |
+| E5 | Testes de SSE flaky no CI (`TestStreamDeEventos`: `test_primeiro_evento_traz_o_estado_de_espera`, `test_manda_keepalive_no_silencio`) | P1 | `TimeoutError` de 10 s com o stream preso no `BaseHTTPMiddleware` do Starlette (run 42693444457); passaram localmente e no re-run. Suspeita: `request.is_disconnected()`/`ASGITransport` atrás do middleware |
 | E4 | Atualizar o bloco `readme-tree` (falta `scripts/gerar_env.py`) | P2 | O workflow regenera sozinho no próximo push em `main` |
 
 ## Segurança e compliance
