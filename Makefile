@@ -12,7 +12,7 @@ COMPOSE ?= $(shell command -v podman >/dev/null 2>&1 && echo "podman compose" ||
 # Porta da aplicação. Sobrescreva com: make PORTA=8010 dev
 PORTA ?= 8000
 
-.PHONY: ajuda bootstrap venv deps infra-up infra-down migrate seed seed-demo \
+.PHONY: ajuda bootstrap venv deps env infra-up infra-down migrate seed seed-demo \
         dev worker css css-watch lint fmt tipos test test-rapido ci limpar \
         nova-migration psql
 
@@ -28,8 +28,7 @@ venv:  ## Cria a venv com Python 3.12
 deps: venv  ## Instala o projeto em modo editável com as deps de dev
 	$(PIP) install -e ".[dev]"
 
-bootstrap: deps infra-up  ## Setup completo: venv + deps + banco + migrations + seed
-	@test -f .env || cp .env.example .env
+bootstrap: deps infra-up  ## Setup completo: .env + venv + deps + banco + migrations + seed
 	./scripts/esperar_postgres.sh
 	$(MAKE) migrate
 	$(MAKE) seed
@@ -37,7 +36,10 @@ bootstrap: deps infra-up  ## Setup completo: venv + deps + banco + migrations + 
 	@echo "Pronto. Rode 'make dev' e abra http://localhost:$(PORTA)"
 
 # --- Infra -----------------------------------------------------------------
-infra-up:  ## Sobe Postgres+pgvector, Mailpit e MinIO
+env:  ## Cria o .env ou completa os segredos que faltam (nunca sobrescreve)
+	python3 scripts/gerar_env.py
+
+infra-up: env  ## Sobe Postgres+pgvector, Mailpit e MinIO
 	$(COMPOSE) up -d db mailpit minio
 
 infra-down:  ## Derruba os containers (mantém os dados no volume pgdata)

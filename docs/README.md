@@ -8,6 +8,7 @@
 | [03-regras-negocio.md](03-regras-negocio.md) | R1–R11: cada regra, onde vive e como é garantida |
 | [04-lgpd-e-compliance.md](04-lgpd-e-compliance.md) | LGPD, resoluções do CFP, e o que ainda precisa de parecer jurídico |
 | [05-roadmap.md](05-roadmap.md) | Fases 0–7 com escopo e critério de pronto |
+| [BACKLOG.md](BACKLOG.md) | Próximo item a pegar, prioridades e decisões pendentes |
 | [06-integracoes.md](06-integracoes.md) | Mercado Pago, daily.co, WhatsApp, transcrição, NFS-e |
 | [07-glossario.md](07-glossario.md) | Vocabulário do domínio |
 

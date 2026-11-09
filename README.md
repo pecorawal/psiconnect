@@ -48,11 +48,16 @@ conta em serviço de terceiro.
 Pré-requisitos: Python 3.12, e `podman` ou `docker` com compose.
 
 ```bash
-make bootstrap     # venv + deps + Postgres/pgvector/MinIO + migrations + seed
+make bootstrap     # .env + venv + deps + Postgres/pgvector/MinIO + migrations + seed
 make seed-demo     # psi@ / pac@ / admin@demo.br, senha: psiconnect123
 make dev           # http://localhost:8000
 make worker        # 2º terminal: salas T-20min, outbox, expiração de reservas
 ```
+
+Nenhuma senha fica no repositório, nem as de desenvolvimento. O `make bootstrap`
+chama o `make env`, que cria o `.env` a partir do `.env.example` e gera senhas e
+chaves aleatórias. Se o `.env` já existe, ele só completa o que falta e nunca
+sobrescreve um valor.
 
 Se a porta 8000 estiver ocupada: `make PORTA=8010 dev`.
 

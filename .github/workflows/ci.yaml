@@ -26,8 +26,10 @@ jobs:
         image: pgvector/pgvector:0.8.6-pg17
         env:
           POSTGRES_USER: psiconnect
-          POSTGRES_PASSWORD: psiconnect
           POSTGRES_DB: psiconnect
+          # Sem senha: o container só existe durante o job e só escuta no
+          # runner. Senha fixa aqui seria acusada como segredo versionado.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports: ["5433:5432"]
         options: >-
           --health-cmd "pg_isready -U psiconnect"
@@ -37,12 +39,19 @@ jobs:
 
     env:
       APP_ENV: teste
-      APP_SECRET_KEY: chave-de-ci-com-mais-de-32-bytes-para-passar
-      DATABASE_URL: postgresql+psycopg://psiconnect:psiconnect@localhost:5433/psiconnect
-      TEST_DATABASE_URL: postgresql+psycopg://psiconnect:psiconnect@localhost:5433/psiconnect
+      DATABASE_URL: postgresql+psycopg://psiconnect@localhost:5433/psiconnect
+      TEST_DATABASE_URL: postgresql+psycopg://psiconnect@localhost:5433/psiconnect
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Segredos efêmeros
+        # Gerados a cada execução em vez de fixos no workflow. O add-mask
+        # esconde o valor caso algum passo o imprima.
+        run: |
+          chave="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          echo "::add-mask::${chave}"
+          echo "APP_SECRET_KEY=${chave}" >> "$GITHUB_ENV"
 
       - uses: actions/setup-python@v5
         with:
