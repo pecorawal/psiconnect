@@ -22,7 +22,7 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 | # | Item | Prio | Observação |
 |---|---|---|---|
 | ~~E1~~ | ~~Revisar e mergear o [PR #2](https://github.com/pecorawal/psiconnect/pull/2) dev → main com o `852fe8c`~~ ✅ | P0 | Mergeado em 2026-11-09 com CI verde |
-| E6 | Fechar os 2 incidentes do GitGuardian como *false positive* (39875415, 39875416) | P1 | `docker-compose.yml:12` (interpolação `${POSTGRES_PASSWORD:?...}`) e `scripts/gerar_env.py:68` (f-string da `DATABASE_URL`). O PR #2 foi mergeado com o check ainda vermelho; enquanto não forem fechados no painel, o check volta a falhar |
+| ~~E6~~ | ~~Fechar os 2 incidentes do GitGuardian como *false positive* (39875415, 39875416)~~ ✅ | P1 | Resolvidos no painel em 2026-11-10 (`docker-compose.yml:12` e `scripts/gerar_env.py:68`, ambos falsos positivos) |
 | E2 | Rotacionar qualquer valor que tenha ido para o histórico do git antes do `852fe8c` | P1 | Eram só valores de dev/CI, mas continuam no histórico. O `make env` nunca sobrescreve: para gerar novos, apague a linha da chave no `.env` e rode de novo (a senha do Postgres exige recriar o volume) |
 | ~~E3~~ | ~~Ligar "Allow GitHub Actions to create and approve pull requests" em Settings → Actions → General~~ ✅ | P1 | Ligada em 2026-11-09 |
 | E5 | Testes de SSE flaky no CI (`TestStreamDeEventos`: `test_primeiro_evento_traz_o_estado_de_espera`, `test_manda_keepalive_no_silencio`) | P1 | `TimeoutError` de 10 s com o stream preso no `BaseHTTPMiddleware` do Starlette (run 42693444457); passaram localmente e no re-run. Suspeita: `request.is_disconnected()`/`ASGITransport` atrás do middleware |
