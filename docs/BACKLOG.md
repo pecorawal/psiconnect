@@ -11,9 +11,8 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 ## Estado em 2026-11-09
 
-- `dev` e `main` sincronizados com o `origin`. O PR #1 (dev → main) foi
-  mergeado; o commit `852fe8c` (segredos fora do repositório, alerta do
-  GitGuardian) foi para o `dev` e abre o próximo PR automático.
+- `dev` e `main` sincronizados com o `origin`. PRs #1 e #2 (dev → main)
+  mergeados; o #2 levou o `852fe8c` (segredos fora do repositório).
 - Suíte completa verde (340 testes) com Postgres local; `ruff` limpo.
 - Fases 0 e 1 concluídas; Fase 2 parcial (resto ⛔ no Mercado Pago); Fase 4 em
   andamento.
@@ -22,11 +21,12 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 | # | Item | Prio | Observação |
 |---|---|---|---|
-| E1 | Revisar e mergear o [PR #2](https://github.com/pecorawal/psiconnect/pull/2) dev → main com o `852fe8c` | P0 | CI verde. GitGuardian acusa 2 falsos positivos no `852fe8c` (`docker-compose.yml:12`, interpolação `${POSTGRES_PASSWORD:?...}`; `scripts/gerar_env.py:68`, f-string da `DATABASE_URL`): marcar como *false positive* no painel (incidentes 39875415 e 39875416) e rodar o check de novo |
+| ~~E1~~ | ~~Revisar e mergear o [PR #2](https://github.com/pecorawal/psiconnect/pull/2) dev → main com o `852fe8c`~~ ✅ | P0 | Mergeado em 2026-11-09 com CI verde |
+| ~~E6~~ | ~~Fechar os 2 incidentes do GitGuardian como *false positive* (39875415, 39875416)~~ ✅ | P1 | Resolvidos no painel em 2026-11-10 (`docker-compose.yml:12` e `scripts/gerar_env.py:68`, ambos falsos positivos) |
 | E2 | Rotacionar qualquer valor que tenha ido para o histórico do git antes do `852fe8c` | P1 | Eram só valores de dev/CI, mas continuam no histórico. O `make env` nunca sobrescreve: para gerar novos, apague a linha da chave no `.env` e rode de novo (a senha do Postgres exige recriar o volume) |
-| E3 | Ligar "Allow GitHub Actions to create and approve pull requests" em Settings → Actions → General | P1 | Desligada: o `auto-pr-dev.yaml` falha com `not permitted to create or approve pull requests` e só emite um aviso. O PR #2 foi aberto à mão |
+| ~~E3~~ | ~~Ligar "Allow GitHub Actions to create and approve pull requests" em Settings → Actions → General~~ ✅ | P1 | Ligada em 2026-11-09 |
 | E5 | Testes de SSE flaky no CI (`TestStreamDeEventos`: `test_primeiro_evento_traz_o_estado_de_espera`, `test_manda_keepalive_no_silencio`) | P1 | `TimeoutError` de 10 s com o stream preso no `BaseHTTPMiddleware` do Starlette (run 42693444457); passaram localmente e no re-run. Suspeita: `request.is_disconnected()`/`ASGITransport` atrás do middleware |
-| E4 | Atualizar o bloco `readme-tree` (falta `scripts/gerar_env.py`) | P2 | O workflow regenera sozinho no próximo push em `main` |
+| ~~E4~~ | ~~Atualizar o bloco `readme-tree` (falta `scripts/gerar_env.py`)~~ ✅ | P2 | O workflow regenera sozinho no próximo push em `main` |
 
 ## Segurança e compliance
 
