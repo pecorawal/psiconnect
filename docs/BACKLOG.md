@@ -9,11 +9,16 @@ aqui e atualize a fase correspondente no roadmap no mesmo commit.
 Legenda de prioridade: **P0** bloqueia produção ou é risco · **P1** próximo a
 fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
-## Estado em 2026-11-09
+## Estado em 2026-11-26
 
 - `dev` e `main` sincronizados com o `origin`. PRs #1 e #2 (dev → main)
   mergeados; o #2 levou o `852fe8c` (segredos fora do repositório).
-- Suíte completa verde (340 testes) com Postgres local; `ruff` limpo.
+- Ambiente remontado num PC novo (Fedora, podman). Dependências agora fixadas
+  em `requirements.txt` (`make deps` instala por ele; `make requirements`
+  regenera); MinIO pela imagem `chainguard/minio`, porque a oficial deixou de
+  ser pública; o seed cria o bucket fora de produção.
+- Suíte completa verde (340 testes) com Postgres e MinIO locais; `ruff` e
+  `mypy --strict` limpos.
 - Fases 0 e 1 concluídas; Fase 2 parcial (resto ⛔ no Mercado Pago); Fase 4 em
   andamento.
 

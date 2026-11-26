@@ -53,6 +53,16 @@ async def executar(com_demo: bool, atualizar: bool = False) -> None:
             log.info("seed.demo", **resumo)
 
     await fechar_engine()
+
+    # Fora de produção o bucket do MinIO é criado aqui (privado e idempotente),
+    # para que um ambiente recém-montado funcione sem passo manual. Em produção
+    # o bucket vem da infraestrutura, com política e criptografia próprias.
+    if settings.armazenamento_provider == "s3" and not settings.eh_producao:
+        from app.providers.armazenamento.s3 import S3StorageProvider
+
+        await S3StorageProvider(settings).garantir_bucket()
+        log.info("seed.bucket", bucket=settings.s3_bucket)
+
     log.info("seed.concluido")
 
 
