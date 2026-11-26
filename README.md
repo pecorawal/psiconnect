@@ -45,13 +45,14 @@ conta em serviço de terceiro.
 
 ## Começando
 
-Pré-requisitos: Python 3.12, e `podman` ou `docker` com compose.
+Pré-requisitos: Python 3.12, `make` e `podman` com `podman-compose`.
 
 ```bash
 make bootstrap     # .env + venv + deps + Postgres/pgvector/MinIO + migrations + seed
 make seed-demo     # psi@ / pac@ / admin@demo.br, senha: psiconnect123
 make dev           # http://localhost:8000
 make worker        # 2º terminal: salas T-20min, outbox, expiração de reservas
+make app-up        # alternativa: app + worker em containers podman (make app-down)
 ```
 
 Nenhuma senha fica no repositório, nem as de desenvolvimento. O `make bootstrap`

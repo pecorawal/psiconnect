@@ -66,6 +66,33 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # --- Aplicação (opcional) ----------------------------------------------
+  # Fora do "make infra-up" de propósito: o dia a dia continua com "make dev"
+  # (reload no host). Para rodar tudo no podman: make app-up.
+  # network_mode host: o .env aponta para localhost:5433/9010/1025, e as URLs
+  # assinadas do MinIO precisam abrir no navegador do mesmo jeito.
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Containerfile
+    image: localhost/psiconnect:dev
+    container_name: psiconnect-app
+    network_mode: host
+    env_file: .env
+    depends_on: [db, mailpit, minio]
+    restart: unless-stopped
+
+  worker:
+    profiles: ["app"]
+    image: localhost/psiconnect:dev
+    container_name: psiconnect-worker
+    command: ["python", "-m", "app.workers"]
+    network_mode: host
+    env_file: .env
+    depends_on: [app]
+    restart: unless-stopped
+
 volumes:
   pgdata:
   miniodata:

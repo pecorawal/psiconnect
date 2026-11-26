@@ -12,7 +12,7 @@ COMPOSE ?= $(shell command -v podman >/dev/null 2>&1 && echo "podman compose" ||
 # Porta da aplicação. Sobrescreva com: make PORTA=8010 dev
 PORTA ?= 8000
 
-.PHONY: ajuda bootstrap venv deps requirements env infra-up infra-down migrate seed seed-demo \
+.PHONY: ajuda bootstrap venv deps requirements env infra-up infra-down app-up app-down app-logs migrate seed seed-demo \
         dev worker css css-watch lint fmt tipos test test-rapido ci limpar \
         nova-migration psql
 
@@ -54,6 +54,20 @@ infra-down:  ## Derruba os containers (mantém os dados no volume pgdata)
 
 psql:  ## Abre um psql no banco de desenvolvimento
 	$(COMPOSE) exec db psql -U psiconnect -d psiconnect
+
+app-up: infra-up  ## Constrói a imagem e sobe app (porta 8000) + worker no podman
+	./scripts/esperar_postgres.sh
+	$(MAKE) migrate
+	$(MAKE) seed
+	$(COMPOSE) --profile app up -d --build --force-recreate app worker
+	@echo "App em http://localhost:8000 (logs: make app-logs)"
+
+app-down:  ## Derruba app e worker (a infra continua de pé)
+	$(COMPOSE) --profile app stop app worker
+	$(COMPOSE) --profile app rm -f app worker
+
+app-logs:  ## Acompanha os logs de app e worker
+	podman logs -f psiconnect-app & podman logs -f psiconnect-worker
 
 # --- Banco -----------------------------------------------------------------
 migrate:  ## Aplica todas as migrations

@@ -69,6 +69,10 @@ def configurar_logging(settings: Settings) -> None:
     logging.getLogger("sqlalchemy.engine").setLevel(
         logging.INFO if settings.database_echo else logging.WARNING
     )
+    # Bibliotecas de rede em DEBUG logam cabeçalhos e corpo das requisições
+    # (documento enviado ao MinIO, assinatura S3) sem passar pela redação de PII.
+    for nome in ("botocore", "boto3", "s3transfer", "urllib3", "httpcore", "httpx"):
+        logging.getLogger(nome).setLevel(logging.WARNING)
 
     processadores: list[Any] = [
         structlog.contextvars.merge_contextvars,
