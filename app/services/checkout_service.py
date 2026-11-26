@@ -38,6 +38,7 @@ from app.providers.base import CobrancaRequest, PaymentProvider
 from app.services.agendamento_service import AgendamentoService
 from app.services.notificacao_service import NotificacaoService
 from app.services.parametros_service import ParametrosService
+from app.services.protocolo_risco_service import ProtocoloRiscoService
 from app.services.regras.precificacao import TabelaTaxas, calcular_reparticao
 
 log = get_logger(__name__)
@@ -99,6 +100,8 @@ class CheckoutService:
         servico = AgendamentoService(self.sessao, self.parametros)
         await servico.confirmar(agendamento.id)
         await NotificacaoService(self.sessao).notificar_agendamento_confirmado(agendamento)
+        # Paciente que já sinalizou risco: o profissional recém-vinculado é avisado.
+        await ProtocoloRiscoService(self.sessao).alertar_profissionais(agendamento.paciente)
 
         log.info("checkout.credito_usado", agendamento_id=str(agendamento.id))
         return agendamento
@@ -274,6 +277,8 @@ class CheckoutService:
         # Vai para a outbox, não sai daqui: um provedor fora do ar não pode
         # derrubar a confirmação de um pagamento já aprovado.
         await NotificacaoService(self.sessao).notificar_agendamento_confirmado(agendamento)
+        # Paciente que já sinalizou risco: o profissional recém-vinculado é avisado.
+        await ProtocoloRiscoService(self.sessao).alertar_profissionais(agendamento.paciente)
 
         log.info(
             "checkout.confirmado",

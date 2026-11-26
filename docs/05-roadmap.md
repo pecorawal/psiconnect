@@ -97,6 +97,15 @@ obrigatória já saíram na Fase 1. Falta trocar os provedores fake pelos reais:
 pela Meta**, o que tem prazo e precisa entrar no planejamento. Mais os lembretes
 T-24h e T-1h, e as telas de pontos.
 
+**Entregue:**
+
+- **Alerta de risco ao profissional** (S1, pendência 5 de compliance): paciente
+  que marca sintoma com `bandeira_risco` gera um e-mail pela outbox para cada
+  profissional com vínculo de atendimento, também quando a consulta é confirmada
+  depois do sinal. O e-mail não traz dado clínico; o detalhe aparece no painel do
+  profissional (`ProtocoloRiscoService`). Hoje sai pelo provider console, com o
+  SMTP real chega por e-mail de verdade (N1).
+
 ---
 
 ## Fase 4 — daily.co real, sala e PWA ⏳ em andamento

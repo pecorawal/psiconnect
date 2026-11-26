@@ -11,6 +11,7 @@ from app.core.templating import responder
 from app.core.tempo import agora_utc
 from app.models import Agendamento, Papel, Sessao, StatusAgendamento
 from app.services.credito_service import CreditoService
+from app.services.protocolo_risco_service import ProtocoloRiscoService
 
 router = APIRouter(tags=["painel"])
 
@@ -75,6 +76,12 @@ def montar(templates: Jinja2Templates) -> APIRouter:
                     [] if eh_profissional else await CreditoService(sessao).saldo(usuario.id)
                 ),
                 "agora": agora_utc(),
+                # Protocolo de risco: pacientes do profissional em sinal de crise.
+                "alertas_risco": (
+                    await ProtocoloRiscoService(sessao).alertas_do_profissional(usuario.id)
+                    if eh_profissional
+                    else []
+                ),
             },
         )
 

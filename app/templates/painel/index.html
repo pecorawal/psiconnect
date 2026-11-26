@@ -26,6 +26,31 @@
     {% endif %}
   </div>
 
+  {% if alertas_risco %}
+  <section role="alert" aria-labelledby="titulo-alertas-risco"
+           class="mt-8 rounded-2xl border border-rose-300 bg-rose-50 px-5 py-4">
+    <h2 id="titulo-alertas-risco" class="text-base font-semibold text-rose-900">
+      Atenção: {{ "paciente sinalizou" if alertas_risco|length == 1 else "pacientes sinalizaram" }}
+      sinal de risco
+    </h2>
+    <p class="mt-1 text-sm text-rose-800">
+      Recomendamos contato antes da próxima sessão. Em emergência, oriente o
+      paciente a ligar para o SAMU (192) ou o CVV (188).
+    </p>
+    <ul class="mt-3 space-y-2">
+      {% for alerta in alertas_risco %}
+      <li class="rounded-xl bg-white px-4 py-2 text-sm text-rose-900">
+        <strong>{{ alerta.paciente_nome }}</strong>
+        <span class="text-rose-700">· {{ alerta.sintomas | join(", ") }}</span>
+        <span class="block text-xs text-rose-700">
+          Registrado em {{ alerta.registrado_em | data_br }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {% if creditos %}
   <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-slate-500">
     Suas sessões contratadas

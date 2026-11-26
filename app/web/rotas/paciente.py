@@ -23,6 +23,7 @@ from app.services.credito_service import CreditoService
 from app.services.disponibilidade_service import DisponibilidadeService
 from app.services.matching_service import MatchingService
 from app.services.parametros_service import ParametrosService
+from app.services.protocolo_risco_service import ProtocoloRiscoService
 from app.services.responsavel_service import CadastroPendente
 
 router = APIRouter(prefix="/paciente", tags=["paciente"])
@@ -78,6 +79,8 @@ def montar(templates: Jinja2Templates) -> APIRouter:
 
         async with UnitOfWork(sessao):
             await MatchingService(sessao).registrar_sintomas(paciente, escolhidos)
+            # Protocolo de risco: avisa quem já atende este paciente.
+            await ProtocoloRiscoService(sessao).alertar_profissionais(paciente)
 
         return RedirectResponse("/paciente/profissionais", status_code=303)
 
