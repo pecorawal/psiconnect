@@ -366,6 +366,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   └── sistema-atendimento-agendamento.png
 │   └── ideias.md
 ├── pyproject.toml
+├── requirements.txt
 ├── scripts
 │   ├── baixar_tailwind.sh
 │   ├── esperar_postgres.sh
@@ -416,6 +417,6 @@ pelo **188**; em emergência, **192** (SAMU).
 │       └── test_templates.py
 └── tree.bak
 
-66 directories, 248 files
+66 directories, 249 files
 ```
 <!-- readme-tree end -->
