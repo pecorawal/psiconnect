@@ -4,7 +4,7 @@ services:
   db:
     # Imagem oficial pgvector. btree_gist (necessária para as constraints
     # EXCLUDE de agenda) já vem no contrib do Postgres.
-    image: pgvector/pgvector:0.8.6-pg17
+    image: docker.io/pgvector/pgvector:0.8.6-pg17
     container_name: psiconnect-db
     environment:
       POSTGRES_USER: psiconnect
@@ -29,7 +29,7 @@ services:
 
   mailpit:
     # SMTP fake para dev: captura os e-mails da outbox sem enviar nada.
-    image: axllent/mailpit:latest
+    image: docker.io/axllent/mailpit:latest
     container_name: psiconnect-mailpit
     ports:
       - "1025:1025" # SMTP
@@ -43,7 +43,9 @@ services:
   minio:
     # Object storage S3-compatível. Guarda foto de perfil e documentos de
     # identificação — o bucket é PRIVADO e a autorização é da aplicação.
-    image: quay.io/minio/minio:latest
+    # quay.io/minio e docker.io/minio deixaram de publicar o servidor; a
+    # Chainguard mantém um build atualizado (inclui o mc do healthcheck).
+    image: docker.io/chainguard/minio:latest
     container_name: psiconnect-minio
     command: server /data --console-address ":9001"
     environment:

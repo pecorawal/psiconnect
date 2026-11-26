@@ -12,7 +12,7 @@ COMPOSE ?= $(shell command -v podman >/dev/null 2>&1 && echo "podman compose" ||
 # Porta da aplicação. Sobrescreva com: make PORTA=8010 dev
 PORTA ?= 8000
 
-.PHONY: ajuda bootstrap venv deps env infra-up infra-down migrate seed seed-demo \
+.PHONY: ajuda bootstrap venv deps requirements env infra-up infra-down migrate seed seed-demo \
         dev worker css css-watch lint fmt tipos test test-rapido ci limpar \
         nova-migration psql
 
@@ -25,8 +25,15 @@ venv:  ## Cria a venv com Python 3.12
 	python3.12 -m venv $(VENV)
 	$(PIP) install -U pip
 
-deps: venv  ## Instala o projeto em modo editável com as deps de dev
-	$(PIP) install -e ".[dev]"
+deps: venv  ## Instala as versões fixas do requirements.txt e o projeto em modo editável
+	$(PIP) install -r requirements.txt
+	$(PIP) install --no-deps -e .
+
+requirements:  ## Reinstala pelas faixas do pyproject.toml e regenera o requirements.txt
+	$(PIP) install -U -e ".[dev,armazenamento]"
+	@{ sed -n '1,/^$$/p' requirements.txt; $(PIP) freeze --exclude-editable | grep -v '^-e'; } > requirements.txt.novo
+	mv requirements.txt.novo requirements.txt
+	@echo "requirements.txt atualizado. Rode 'make ci' antes de comitar."
 
 bootstrap: deps infra-up  ## Setup completo: .env + venv + deps + banco + migrations + seed
 	./scripts/esperar_postgres.sh

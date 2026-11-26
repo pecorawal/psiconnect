@@ -74,8 +74,9 @@ class S3StorageProvider:
     async def garantir_bucket(self) -> None:
         """Cria o bucket se não existir, **privado**.
 
-        Chamado no lifespan em dev. Em produção o bucket normalmente já existe
-        com política e criptografia definidas pela infraestrutura.
+        Chamado pelo seed (``python -m app.seeds``) fora de produção. Em
+        produção o bucket normalmente já existe com política e criptografia
+        definidas pela infraestrutura.
         """
 
         def _criar() -> None:
