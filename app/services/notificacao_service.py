@@ -36,7 +36,21 @@ log = get_logger(__name__)
 TEMPLATE_AGENDAMENTO_CONFIRMADO = "agendamento_confirmado"
 TEMPLATE_LINK_SESSAO = "link_sessao"
 TEMPLATE_LEMBRETE_24H = "lembrete_24h"
+TEMPLATE_LEMBRETE_1H = "lembrete_1h"
 TEMPLATE_AVALIACAO_PENDENTE = "avaliacao_pendente"
+
+#: Lembretes (N2), do mais antecipado ao mais próximo, com a antecedência de
+#: cada um. O worker usa a ordem: um lembrete só sai enquanto o seguinte ainda
+#: não venceu, e o último só até o link da sala (R8) assumir.
+LEMBRETES: tuple[tuple[str, timedelta], ...] = (
+    (TEMPLATE_LEMBRETE_24H, timedelta(hours=24)),
+    (TEMPLATE_LEMBRETE_1H, timedelta(hours=1)),
+)
+TEMPLATES_LEMBRETE = frozenset(template for template, _ in LEMBRETES)
+
+#: Canais do lembrete. Só o paciente recebe: o profissional tem a agenda no
+#: painel, e um lembrete por consulta lotaria a caixa de quem atende o dia todo.
+CANAIS_LEMBRETE = (CanalNotificacao.EMAIL, CanalNotificacao.WHATSAPP)
 
 
 class NotificacaoService:
@@ -142,6 +156,27 @@ class NotificacaoService:
                 enviadas += 1 if criada else 0
         return enviadas
 
+    async def agendar_lembrete(self, agendamento: Agendamento, template: str) -> int:
+        """Enfileira um lembrete para o paciente, para envio imediato.
+
+        Quem decide *quando* é o worker (``agenda.enviar_lembretes``), olhando o
+        estado da consulta naquele momento. Agendar a linha lá na confirmação
+        lembraria de consulta remarcada ou cancelada.
+        """
+        paciente = agendamento.paciente.usuario
+        contexto = self._contexto(agendamento, paciente.timezone)
+        enfileiradas = 0
+        for canal in CANAIS_LEMBRETE:
+            criada = await self.enfileirar(
+                usuario=paciente,
+                canal=canal,
+                template=template,
+                contexto=contexto,
+                chave_idempotencia=chave_lembrete(template, agendamento.id, canal),
+            )
+            enfileiradas += 1 if criada else 0
+        return enfileiradas
+
     async def pendentes(self, limite: int = 50) -> list[Notificacao]:
         """O que já venceu e ainda não foi enviado.
 
@@ -194,6 +229,10 @@ class NotificacaoService:
             "hora": local.strftime("%H:%M"),
             "duracao_min": agendamento.duracao_min,
         }
+
+
+def chave_lembrete(template: str, agendamento_id: uuid.UUID, canal: CanalNotificacao) -> str:
+    return f"{template}:{agendamento_id}:{canal.value}"
 
 
 def chave_de(prefixo: str, *partes: uuid.UUID | str) -> str:

@@ -31,6 +31,8 @@ from app.providers.notificacao.smtp import (
 from app.providers.registry import _notificacao
 from app.services.notificacao_service import (
     TEMPLATE_AGENDAMENTO_CONFIRMADO,
+    TEMPLATE_LEMBRETE_1H,
+    TEMPLATE_LEMBRETE_24H,
     TEMPLATE_LINK_SESSAO,
 )
 from app.services.protocolo_risco_service import TEMPLATE_ALERTA_RISCO
@@ -61,6 +63,24 @@ CONTEXTOS: dict[str, dict[str, Any]] = {
         "hora": "14:00",
         "duracao_min": 50,
         "sala_url": "https://psiconnect.daily.co/psi-abc123",
+    },
+    TEMPLATE_LEMBRETE_24H: {
+        "agendamento_id": "8f1c2a8e-0000-4000-8000-000000000001",
+        "profissional_nome": "Dra. Ana Souza",
+        "profissional_foto": None,
+        "paciente_nome": "João",
+        "data": "03/12/2026",
+        "hora": "14:00",
+        "duracao_min": 50,
+    },
+    TEMPLATE_LEMBRETE_1H: {
+        "agendamento_id": "8f1c2a8e-0000-4000-8000-000000000001",
+        "profissional_nome": "Dra. Ana Souza",
+        "profissional_foto": None,
+        "paciente_nome": "João",
+        "data": "03/12/2026",
+        "hora": "14:00",
+        "duracao_min": 50,
     },
     TEMPLATE_CONVITE: {
         "responsavel_nome": "Maria Lima",

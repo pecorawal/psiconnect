@@ -7,15 +7,17 @@ some, para que dê para investigar.
 
 from __future__ import annotations
 
+import uuid
 from datetime import timedelta
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.core.tempo import agora_utc
-from app.models import StatusNotificacao
+from app.models import Agendamento, Notificacao, StatusAgendamento, StatusNotificacao
 from app.providers.base import NotificationProvider
-from app.services.notificacao_service import NotificacaoService
+from app.services.notificacao_service import TEMPLATES_LEMBRETE, NotificacaoService
 
 log = get_logger(__name__)
 
@@ -40,6 +42,12 @@ async def enviar_pendentes(
             # erro, é indisponibilidade. Cancelar evita retry eterno.
             notificacao.status = StatusNotificacao.CANCELADA
             notificacao.erro = f"canal {notificacao.canal.value} indisponível"
+            continue
+
+        if await _lembrete_obsoleto(sessao, notificacao):
+            # Lembrete em retry de uma consulta cancelada depois de enfileirado.
+            notificacao.status = StatusNotificacao.CANCELADA
+            notificacao.erro = "consulta não está mais confirmada"
             continue
 
         notificacao.tentativas += 1
@@ -88,3 +96,16 @@ async def enviar_pendentes(
     if enviadas or falhas:
         log.info("outbox.processado", enviadas=enviadas, falhas=falhas)
     return enviadas, falhas
+
+
+async def _lembrete_obsoleto(sessao: AsyncSession, notificacao: Notificacao) -> bool:
+    """Lembrete (N2) de consulta que deixou de estar confirmada."""
+    if notificacao.template not in TEMPLATES_LEMBRETE:
+        return False
+    agendamento_id = (notificacao.contexto or {}).get("agendamento_id")
+    if not isinstance(agendamento_id, str):
+        return True
+    status = await sessao.scalar(
+        select(Agendamento.status).where(Agendamento.id == uuid.UUID(agendamento_id))
+    )
+    return status is not StatusAgendamento.CONFIRMADO

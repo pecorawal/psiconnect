@@ -1,0 +1,14 @@
+{% set assunto %}Sua sessão começa em breve, às {{ hora }}{% endset %}
+Olá, {{ paciente_nome }},
+
+Sua sessão com {{ profissional_nome }} começa hoje às {{ hora }}.
+
+O link da sala chega pouco antes do horário. Se puder, separe um lugar
+reservado e confira a conexão. A sessão não é gravada.
+
+{{ base_url }}/painel
+
+Equipe PsiConnect
+
+--
+Em crise ou risco imediato, ligue para o CVV (188, 24 horas) ou o SAMU (192).

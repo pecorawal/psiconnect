@@ -1,0 +1,13 @@
+{% set assunto %}Lembrete: sessão em {{ data }} às {{ hora }}{% endset %}
+Olá, {{ paciente_nome }},
+
+Lembrete da sua sessão com {{ profissional_nome }} em {{ data }} às {{ hora }}
+({{ duracao_min }} minutos).
+
+O link da sala chega pouco antes do horário. Se precisar, você acompanha a
+consulta pelo seu painel: {{ base_url }}/painel
+
+Equipe PsiConnect
+
+--
+Em crise ou risco imediato, ligue para o CVV (188, 24 horas) ou o SAMU (192).
