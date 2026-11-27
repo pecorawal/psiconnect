@@ -111,6 +111,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │       │   └── SKILL.md
 │       └── sincronizar
 │           └── SKILL.md
+├── .containerignore
 ├── .env.example
 ├── .github
 │   └── workflows
@@ -120,6 +121,7 @@ pelo **188**; em emergência, **192** (SAMU).
 ├── .gitignore
 ├── .pre-commit-config.yaml
 ├── CLAUDE.md
+├── Containerfile
 ├── Makefile
 ├── README.md
 ├── alembic
@@ -190,7 +192,8 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   │   └── __init__.py
 │   │   ├── notificacao
 │   │   │   ├── __init__.py
-│   │   │   └── console.py
+│   │   │   ├── console.py
+│   │   │   └── smtp.py
 │   │   ├── pagamento
 │   │   │   ├── __init__.py
 │   │   │   ├── assinatura.py
@@ -230,6 +233,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   ├── notificacao_service.py
 │   │   ├── parametros_service.py
 │   │   ├── perfil_service.py
+│   │   ├── protocolo_risco_service.py
 │   │   ├── regras
 │   │   │   ├── __init__.py
 │   │   │   ├── limites.py
@@ -279,6 +283,11 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   │   └── rodape.html
 │   │   ├── dev
 │   │   │   └── notificacoes.html
+│   │   ├── email
+│   │   │   ├── agendamento_confirmado.txt
+│   │   │   ├── alerta_risco.txt
+│   │   │   ├── convite_responsavel.txt
+│   │   │   └── link_sessao.txt
 │   │   ├── erros
 │   │   │   └── erro.html
 │   │   ├── paciente
@@ -361,7 +370,8 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   ├── 0009-papeis-e-permissoes.md
 │   │   ├── 0010-cadastro-de-menores.md
 │   │   ├── 0011-sse-no-lobby.md
-│   │   └── 0012-pwa-sem-cache-de-dado-clinico.md
+│   │   ├── 0012-pwa-sem-cache-de-dado-clinico.md
+│   │   └── 0013-email-texto-puro-sem-dado-clinico.md
 │   ├── assets
 │   │   ├── mindmap.txt
 │   │   └── sistema-atendimento-agendamento.png
@@ -381,6 +391,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │   ├── conftest.py
 │   ├── contratos
 │   │   ├── __init__.py
+│   │   ├── test_notificacao.py
 │   │   ├── test_pagamento.py
 │   │   └── test_video.py
 │   ├── db
@@ -398,6 +409,7 @@ pelo **188**; em emergência, **192** (SAMU).
 │   │   ├── test_avaliacao.py
 │   │   ├── test_credito_service.py
 │   │   ├── test_financeiro_service.py
+│   │   ├── test_protocolo_risco.py
 │   │   ├── test_responsavel.py
 │   │   └── test_worker.py
 │   ├── unit
@@ -412,12 +424,13 @@ pelo **188**; em emergência, **192** (SAMU).
 │       ├── test_admin.py
 │       ├── test_auth.py
 │       ├── test_profissional.py
+│       ├── test_protocolo_risco.py
 │       ├── test_pwa.py
 │       ├── test_saude_e_home.py
 │       ├── test_sessao_lobby.py
 │       └── test_templates.py
 └── tree.bak
 
-66 directories, 249 files
+67 directories, 261 files
 ```
 <!-- readme-tree end -->
