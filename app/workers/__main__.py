@@ -52,6 +52,7 @@ async def ciclo() -> dict[str, int]:
         "expiradas": 0,
         "no_show": 0,
         "creditos": 0,
+        "lembretes": 0,
         "enviadas": 0,
         "falhas": 0,
     }
@@ -74,11 +75,13 @@ async def ciclo() -> dict[str, int]:
                         resultado[nome] = await agenda.marcar_no_show(sessao, parametros)
                     elif nome == "creditos":
                         resultado[nome] = await agenda.expirar_creditos(sessao)
+                    elif nome == "lembretes":
+                        resultado[nome] = await agenda.enviar_lembretes(sessao, parametros)
             except Exception:
                 await sessao.rollback()
                 log.exception("worker.tarefa_falhou", tarefa=nome)
 
-        for nome in ("salas", "expiradas", "no_show", "creditos"):
+        for nome in ("salas", "expiradas", "no_show", "creditos", "lembretes"):
             await _rodar(nome)
 
         try:

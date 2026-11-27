@@ -317,3 +317,124 @@ class TestIdempotenciaDaOutbox:
             chave_idempotencia=f"zap:{usuario.id}",
         )
         assert criada is None
+
+
+class TestLembretes:
+    """N2 — lembretes de T-24h e T-1h ao paciente."""
+
+    async def _consulta(
+        self, sessao: AsyncSession, *, minutos_ate: int, marcada_ha: timedelta = timedelta(days=3)
+    ):  # type: ignore[no-untyped-def]
+        prof, pac, _, agendamento = await cenario_confirmado(sessao, minutos_ate=minutos_ate)
+        agendamento.criado_em = agora_utc() - marcada_ha
+        await sessao.flush()
+        return prof, pac, agendamento
+
+    async def _templates(self, sessao: AsyncSession, agendamento_id: str) -> list[tuple[str, str]]:
+        linhas = (
+            await sessao.execute(
+                select(Notificacao.template, Notificacao.canal, Notificacao.usuario_id).where(
+                    Notificacao.contexto["agendamento_id"].astext == agendamento_id
+                )
+            )
+        ).all()
+        return sorted((t, c.value) for t, c, _ in linhas)
+
+    async def test_lembrete_de_24h_dentro_da_janela(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        _, pac, agendamento = await self._consulta(sessao, minutos_ate=23 * 60)
+
+        assert await agenda.enviar_lembretes(sessao, parametros(sessao, settings)) >= 1
+
+        notificacoes = (
+            (
+                await sessao.execute(
+                    select(Notificacao).where(
+                        Notificacao.contexto["agendamento_id"].astext == str(agendamento.id)
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert {n.template for n in notificacoes} == {"lembrete_24h"}
+        assert any(n.canal is CanalNotificacao.EMAIL for n in notificacoes)
+        # Só o paciente: o profissional tem a agenda no painel.
+        assert {n.usuario_id for n in notificacoes} == {pac.usuario_id}
+        # Envio imediato, não agendado para o futuro.
+        assert all(n.agendada_para <= agora_utc() for n in notificacoes)
+
+    async def test_lembrete_e_idempotente(self, sessao: AsyncSession, settings: Settings) -> None:
+        await self._consulta(sessao, minutos_ate=23 * 60)
+        assert await agenda.enviar_lembretes(sessao, parametros(sessao, settings)) >= 1
+        assert await agenda.enviar_lembretes(sessao, parametros(sessao, settings)) == 0
+
+    async def test_lembrete_de_1h_dentro_da_janela(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        _, _, agendamento = await self._consulta(sessao, minutos_ate=40)
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        templates = {t for t, _ in await self._templates(sessao, str(agendamento.id))}
+        # A janela do de 24h já passou: não chega um "lembrete de amanhã" 40 min antes.
+        assert templates == {"lembrete_1h"}
+
+    @pytest.mark.parametrize("minutos_ate", [30 * 60, 10])
+    async def test_fora_das_janelas_nao_lembra(
+        self, sessao: AsyncSession, settings: Settings, minutos_ate: int
+    ) -> None:
+        """30h: cedo demais. 10min: o link da sala já cuida."""
+        _, _, agendamento = await self._consulta(sessao, minutos_ate=minutos_ate)
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        assert await self._templates(sessao, str(agendamento.id)) == []
+
+    async def test_consulta_marcada_ha_pouco_nao_recebe_o_de_24h(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        """Marcada para daqui a 10h: o paciente acabou de ver a confirmação."""
+        _, _, agendamento = await self._consulta(
+            sessao, minutos_ate=10 * 60, marcada_ha=timedelta(minutes=5)
+        )
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        assert await self._templates(sessao, str(agendamento.id)) == []
+
+    async def test_consulta_cancelada_nao_recebe_lembrete(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        _, _, agendamento = await self._consulta(sessao, minutos_ate=23 * 60)
+        agendamento.status = StatusAgendamento.CANCELADO_PACIENTE
+        await sessao.flush()
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        assert await self._templates(sessao, str(agendamento.id)) == []
+
+    async def test_outbox_descarta_lembrete_de_consulta_cancelada_depois(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        _, _, agendamento = await self._consulta(sessao, minutos_ate=23 * 60)
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        agendamento.status = StatusAgendamento.CANCELADO_PACIENTE
+        await sessao.flush()
+
+        await outbox.enviar_pendentes(sessao, ConsoleNotificationProvider())
+
+        lembretes = (
+            (
+                await sessao.execute(
+                    select(Notificacao).where(
+                        Notificacao.contexto["agendamento_id"].astext == str(agendamento.id)
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert lembretes
+        assert all(n.status is StatusNotificacao.CANCELADA for n in lembretes)
+
+    async def test_outbox_envia_lembrete_de_consulta_confirmada(
+        self, sessao: AsyncSession, settings: Settings
+    ) -> None:
+        await self._consulta(sessao, minutos_ate=23 * 60)
+        await agenda.enviar_lembretes(sessao, parametros(sessao, settings))
+        enviadas, _ = await outbox.enviar_pendentes(sessao, ConsoleNotificationProvider())
+        assert enviadas >= 1

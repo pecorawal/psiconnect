@@ -7,26 +7,29 @@ Três coisas que precisam acontecer sem ninguém clicar em nada:
    abandonado bloquearia o horário para sempre, já que ``PENDENTE_PAGAMENTO``
    ocupa a agenda.
 3. **Marcar no-show** depois da tolerância (R7).
+4. **Lembrar o paciente** em T-24h e T-1h (N2).
 """
 
 from __future__ import annotations
 
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.core.tempo import agora_utc
 from app.models import (
     Agendamento,
+    CanalNotificacao,
+    Notificacao,
     Sessao,
     StatusAgendamento,
     StatusSessao,
 )
 from app.providers.base import VideoProvider
 from app.services.agendamento_service import AgendamentoService
-from app.services.notificacao_service import NotificacaoService
+from app.services.notificacao_service import LEMBRETES, NotificacaoService
 from app.services.parametros_service import ParametrosService
 from app.services.sessao_service import SessaoService
 
@@ -140,3 +143,60 @@ async def expirar_creditos(sessao: AsyncSession) -> int:
     from app.services.credito_service import CreditoService
 
     return await CreditoService(sessao).expirar_vencidos()
+
+
+async def enviar_lembretes(sessao: AsyncSession, parametros: ParametrosService) -> int:
+    """N2 — lembretes de T-24h e T-1h ao paciente.
+
+    A decisão é tomada aqui, a cada ciclo, com o estado atual da consulta, e não
+    na confirmação: uma linha agendada para daqui a três dias lembraria de uma
+    consulta que nesse meio-tempo foi cancelada.
+
+    Um lembrete só sai dentro da sua janela, que vai da antecedência dele até a
+    do lembrete seguinte (o de 1h vai até o link da sala, R8). Assim, com o
+    worker parado por horas, ninguém recebe o "falta um dia" uma hora antes. E
+    consulta marcada depois do momento do lembrete não recebe esse lembrete: o
+    paciente acabou de ver a confirmação.
+
+    O ``NOT EXISTS`` sobre a chave de idempotência tira da consulta quem já foi
+    lembrado; sem ele, as consultas já atendidas ocupariam o ``limit`` e as de
+    trás nunca seriam vistas.
+    """
+    agora = agora_utc()
+    antecedencia_link = timedelta(minutes=await parametros.antecedencia_link_min())
+    pisos = [antecedencia for _, antecedencia in LEMBRETES[1:]] + [antecedencia_link]
+    notificacoes = NotificacaoService(sessao)
+    enfileiradas = 0
+
+    for (template, antecedencia), piso in zip(LEMBRETES, pisos, strict=True):
+        if piso >= antecedencia:
+            # Link configurado para sair antes do lembrete: ele já cumpre o papel.
+            continue
+        chave_email = func.concat(template, ":", Agendamento.id, ":", CanalNotificacao.EMAIL.value)
+        candidatos = (
+            (
+                await sessao.execute(
+                    select(Agendamento)
+                    .where(
+                        Agendamento.status == StatusAgendamento.CONFIRMADO,
+                        Agendamento.inicio_utc <= agora + antecedencia,
+                        Agendamento.inicio_utc > agora + piso,
+                        Agendamento.criado_em <= Agendamento.inicio_utc - antecedencia,
+                        ~exists().where(Notificacao.chave_idempotencia == chave_email),
+                    )
+                    .order_by(Agendamento.inicio_utc)
+                    .limit(50)
+                )
+            )
+            .unique()
+            .scalars()
+            .all()
+        )
+        for agendamento in candidatos:
+            enfileiradas += await notificacoes.agendar_lembrete(agendamento, template)
+
+    await sessao.flush()
+
+    if enfileiradas:
+        log.info("worker.lembretes_enfileirados", quantidade=enfileiradas)
+    return enfileiradas

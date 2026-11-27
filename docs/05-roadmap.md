@@ -94,8 +94,7 @@ Pago/Mercado Livre e foi movido para o [backlog](#backlog--mercado-pago--mercado
 O worker, a outbox com retry, a expiração de reserva, o no-show e a avaliação
 obrigatória já saíram na Fase 1, e o e-mail já é real (abaixo). Falta a WhatsApp
 Cloud API, que exige **templates HSM aprovados pela Meta**, o que tem prazo e
-precisa entrar no planejamento. Mais os lembretes T-24h e T-1h, e as telas de
-pontos.
+precisa entrar no planejamento, e as telas de pontos.
 
 **Entregue:**
 
@@ -110,6 +109,12 @@ pontos.
   ([ADR 0013](adr/0013-email-texto-puro-sem-dado-clinico.md)). Suíte de contrato
   `tests/contratos/test_notificacao.py` contra o console e o SMTP. Em produção o
   boot recusa console e SMTP sem TLS/autenticação.
+- **Lembretes T-24h e T-1h** (N2): o worker decide a cada ciclo, com o estado
+  atual da consulta, em vez de agendar a linha na confirmação, que lembraria de
+  consulta cancelada. Cada lembrete tem a sua janela (o de 24h até T-1h; o de 1h
+  até o link da sala), consulta marcada depois do momento do lembrete não o
+  recebe, e a outbox cancela lembrete em retry de consulta que deixou de estar
+  confirmada. Só o paciente recebe: o profissional tem a agenda no painel.
 
 ---
 
