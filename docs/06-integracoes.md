@@ -78,7 +78,11 @@ Padrão **outbox**: o service grava uma `Notificacao` com `agendada_para` e
 envia dentro da transação do caso de uso — se o envio falhasse, o agendamento
 faria rollback junto.
 
-- **E-mail:** Mailpit em dev (UI em <http://localhost:8025>), SMTP real depois.
+- **E-mail:** `SmtpEmailProvider` (`NOTIFICACAO_PROVIDER=smtp`), Mailpit em dev
+  (UI em <http://localhost:8025>). Texto puro, sem dado clínico e com link para a
+  aplicação ([ADR 0013](adr/0013-email-texto-puro-sem-dado-clinico.md)); o texto
+  de cada template fica em `app/templates/email/`. Em produção exige TLS e
+  usuário/senha, ou o boot falha.
 - **WhatsApp:** Cloud API da Meta. Mensagem iniciada pela empresa exige
   **template HSM aprovado** — o texto precisa ser submetido e aprovado antes,
   o que tem prazo e deve entrar no planejamento da Fase 3.

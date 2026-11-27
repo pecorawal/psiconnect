@@ -17,7 +17,7 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
   em `requirements.txt` (`make deps` instala por ele; `make requirements`
   regenera); MinIO pela imagem `chainguard/minio`, porque a oficial deixou de
   ser pública; o seed cria o bucket fora de produção.
-- Suíte completa verde (351 testes) com Postgres e MinIO locais; `ruff` e
+- Suíte completa verde (377 testes) com Postgres e MinIO locais; `ruff` e
   `mypy --strict` limpos.
 - `make app-up` roda app + worker também no podman (`Containerfile`, serviços
   `app`/`worker` no profile `app` do compose); `make dev` segue para o dia a dia.
@@ -58,7 +58,7 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 | # | Item | Prio | Observação |
 |---|---|---|---|
-| N1 | `SmtpEmailProvider` (Mailpit em dev) | P1 | Pode começar já |
+| ~~N1~~ | ~~`SmtpEmailProvider` (Mailpit em dev)~~ ✅ | P1 | Feito em 2026-11-27 ([ADR 0013](adr/0013-email-texto-puro-sem-dado-clinico.md)); `make app-up` já envia para o Mailpit |
 | N2 | Lembretes T-24h e T-1h no worker | P1 | Outbox com retry já existe |
 | N3 | ⛔ WhatsApp Cloud API — templates HSM aprovados pela Meta | P2 | Tem prazo de aprovação: pedir cedo |
 | N4 | Telas de pontos (avaliação/pontualidade) | P2 | |

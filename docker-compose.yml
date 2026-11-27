@@ -80,6 +80,10 @@ services:
     container_name: psiconnect-app
     network_mode: host
     env_file: .env
+    environment:
+      # Rodando tudo no podman, o e-mail sai de verdade para o Mailpit
+      # (http://localhost:8025). O .env segue com console para os testes.
+      NOTIFICACAO_PROVIDER: smtp
     depends_on: [db, mailpit, minio]
     restart: unless-stopped
 
@@ -90,6 +94,8 @@ services:
     command: ["python", "-m", "app.workers"]
     network_mode: host
     env_file: .env
+    environment:
+      NOTIFICACAO_PROVIDER: smtp
     depends_on: [app]
     restart: unless-stopped
 
