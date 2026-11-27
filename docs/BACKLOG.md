@@ -17,8 +17,10 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
   em `requirements.txt` (`make deps` instala por ele; `make requirements`
   regenera); MinIO pela imagem `chainguard/minio`, porque a oficial deixou de
   ser pública; o seed cria o bucket fora de produção.
-- Suíte completa verde (340 testes) com Postgres e MinIO locais; `ruff` e
+- Suíte completa verde (377 testes) com Postgres e MinIO locais; `ruff` e
   `mypy --strict` limpos.
+- `make app-up` roda app + worker também no podman (`Containerfile`, serviços
+  `app`/`worker` no profile `app` do compose); `make dev` segue para o dia a dia.
 - Fases 0 e 1 concluídas; Fase 2 parcial (resto ⛔ no Mercado Pago); Fase 4 em
   andamento.
 
@@ -37,7 +39,7 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 | # | Item | Prio | Origem |
 |---|---|---|---|
-| S1 | Alertar o profissional quando o paciente marca sintoma com `bandeira_risco` | P0 | Pendência 5 de compliance — o dado já é modelado e o `MatchingService` já filtra |
+| ~~S1~~ | ~~Alertar o profissional quando o paciente marca sintoma com `bandeira_risco`~~ ✅ | P0 | Feito em 2026-11-26 (`ProtocoloRiscoService`): e-mail sem dado clínico pela outbox + aviso no painel, só para profissional com vínculo |
 | S2 | Consentimento do **profissional** para a transcrição (disclaimer hoje cobre só o paciente) | P0 antes da Fase 5 | Pendência 3 |
 | S3 | E-mail do encarregado (DPO), canal do titular, RIPD, plano de incidente | P0 antes do 1º usuário | Pendência 6 |
 | S4 | Direitos do titular (art. 18) sobre `SolicitacaoTitular` | P1 (Fase 7) | Pendência 7 |
@@ -56,7 +58,7 @@ fazer · **P2** depois · **⛔** bloqueado por algo externo.
 
 | # | Item | Prio | Observação |
 |---|---|---|---|
-| N1 | `SmtpEmailProvider` (Mailpit em dev) | P1 | Pode começar já |
+| ~~N1~~ | ~~`SmtpEmailProvider` (Mailpit em dev)~~ ✅ | P1 | Feito em 2026-11-27 ([ADR 0013](adr/0013-email-texto-puro-sem-dado-clinico.md)); `make app-up` já envia para o Mailpit |
 | N2 | Lembretes T-24h e T-1h no worker | P1 | Outbox com retry já existe |
 | N3 | ⛔ WhatsApp Cloud API — templates HSM aprovados pela Meta | P2 | Tem prazo de aprovação: pedir cedo |
 | N4 | Telas de pontos (avaliação/pontualidade) | P2 | |

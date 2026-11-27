@@ -1,0 +1,17 @@
+# O que não entra no contexto de build da imagem. O .env, principalmente:
+# a configuração é lida da máquina em tempo de execução, nunca embutida.
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.git/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+storage_local/
+tests/
+docs/

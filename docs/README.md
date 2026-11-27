@@ -28,6 +28,7 @@
 | [0010](adr/0010-cadastro-de-menores.md) | Adolescentes com consentimento do responsável |
 | [0011](adr/0011-sse-no-lobby.md) | SSE na sala de espera, polling como plano B |
 | [0012](adr/0012-pwa-sem-cache-de-dado-clinico.md) | PWA que instala, mas não cacheia dado clínico |
+| [0013](adr/0013-email-texto-puro-sem-dado-clinico.md) | E-mail em texto puro, sem dado clínico, com link para a aplicação |
 
 ## Assets
 

@@ -234,6 +234,9 @@ class Settings(BaseSettings):
             problemas.append("PAGAMENTO_PROVIDER está como fake")
         if self.video_provider == "fake":
             problemas.append("VIDEO_PROVIDER está como fake")
+        if self.notificacao_provider == "console":
+            # O console marca como enviada uma mensagem que ninguém recebe.
+            problemas.append("NOTIFICACAO_PROVIDER está como console")
         if problemas:
             raise RuntimeError("Configuração inválida para produção: " + "; ".join(problemas))
 

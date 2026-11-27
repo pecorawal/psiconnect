@@ -89,13 +89,27 @@ Pago/Mercado Livre e foi movido para o [backlog](#backlog--mercado-pago--mercado
 
 ---
 
-## Fase 3 — Notificações reais (~1 semana)
+## Fase 3 — Notificações reais ⏳ em andamento
 
 O worker, a outbox com retry, a expiração de reserva, o no-show e a avaliação
-obrigatória já saíram na Fase 1. Falta trocar os provedores fake pelos reais:
-`SmtpEmailProvider` e WhatsApp Cloud API — este exige **templates HSM aprovados
-pela Meta**, o que tem prazo e precisa entrar no planejamento. Mais os lembretes
-T-24h e T-1h, e as telas de pontos.
+obrigatória já saíram na Fase 1, e o e-mail já é real (abaixo). Falta a WhatsApp
+Cloud API, que exige **templates HSM aprovados pela Meta**, o que tem prazo e
+precisa entrar no planejamento. Mais os lembretes T-24h e T-1h, e as telas de
+pontos.
+
+**Entregue:**
+
+- **Alerta de risco ao profissional** (S1, pendência 5 de compliance): paciente
+  que marca sintoma com `bandeira_risco` gera um e-mail pela outbox para cada
+  profissional com vínculo de atendimento, também quando a consulta é confirmada
+  depois do sinal. O e-mail não traz dado clínico; o detalhe aparece no painel do
+  profissional (`ProtocoloRiscoService`). Sai por e-mail com o
+  `SmtpEmailProvider`.
+- **`SmtpEmailProvider`** (N1): e-mail de verdade pela outbox, Mailpit em dev.
+  Texto puro, sem dado clínico, link sempre para a aplicação
+  ([ADR 0013](adr/0013-email-texto-puro-sem-dado-clinico.md)). Suíte de contrato
+  `tests/contratos/test_notificacao.py` contra o console e o SMTP. Em produção o
+  boot recusa console e SMTP sem TLS/autenticação.
 
 ---
 

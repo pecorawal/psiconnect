@@ -1,0 +1,13 @@
+{% set assunto %}Sua sessão começa às {{ hora }}{% endset %}
+Olá,
+
+A sala da sessão de {{ data }} às {{ hora }} já está pronta. Para entrar, acesse:
+
+{{ base_url }}/sessao/{{ agendamento_id }}
+
+Escolha um lugar reservado e com boa conexão. A sessão não é gravada.
+
+Equipe PsiConnect
+
+--
+Em crise ou risco imediato, ligue para o CVV (188, 24 horas) ou o SAMU (192).

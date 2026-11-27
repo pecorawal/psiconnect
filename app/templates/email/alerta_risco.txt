@@ -1,0 +1,11 @@
+{% set assunto %}Aviso importante sobre um paciente{% endset %}
+Olá,
+
+Há um aviso importante sobre {{ paciente_nome }} no seu painel do PsiConnect.
+Recomendamos ver o quanto antes:
+
+{{ base_url }}/painel
+
+Por segurança, os detalhes ficam só no painel, que exige login.
+
+Equipe PsiConnect

@@ -84,7 +84,18 @@ def _video(settings: Settings) -> VideoProvider:
 def _notificacao(settings: Settings) -> NotificationProvider:
     if settings.notificacao_provider == "console":
         return ConsoleNotificationProvider()
-    # SmtpEmailProvider e WhatsApp chegam na Fase 3.
+    if settings.notificacao_provider == "smtp":
+        from app.providers.notificacao.smtp import SmtpEmailProvider
+
+        # Em produção, e-mail sem TLS ou sem autenticação expõe o conteúdo e
+        # o endereço do paciente na rede. Falha no boot, como os outros.
+        if settings.eh_producao:
+            if not (settings.smtp_tls or settings.smtp_port == 465):
+                raise ProviderIndisponivel("SMTP_TLS precisa estar ligado em produção.")
+            if not (settings.smtp_usuario and settings.smtp_senha):
+                raise ProviderIndisponivel("SMTP_USUARIO e SMTP_SENHA não configurados.")
+        return SmtpEmailProvider(settings)
+    # WhatsApp chega com os templates HSM aprovados (N3).
     raise ProviderIndisponivel(
         f"Provedor de notificação '{settings.notificacao_provider}' ainda não implementado."
     )

@@ -80,8 +80,10 @@ exportação e responsabilidade mudam — exige nova ADR e revisão jurídica.
    **Recomendação: bloquear menores de 18 na Fase 1**, explicitamente, e
    desenhar o fluxo do responsável depois.
 5. **Protocolo de risco.** `Sintoma.bandeira_risco` já está modelado. Mínimo
-   viável, já implementado no rodapé: banner permanente com **CVV 188**. Falta
-   alertar o profissional quando o paciente marca sintoma de risco.
+   viável, já implementado no rodapé: banner permanente com **CVV 188**. O
+   profissional com vínculo de atendimento é alertado (e-mail sem dado clínico
+   e aviso no painel) quando o paciente marca sintoma de risco ou quando uma
+   consulta com paciente já em risco é confirmada — `ProtocoloRiscoService`.
 6. **Encarregado (DPO)**, canal do titular, RIPD e plano de resposta a incidente
    — o e-mail do encarregado precisa estar no ar antes do primeiro usuário real.
 7. **Direitos do titular (art. 18)** — `SolicitacaoTitular` está modelado;

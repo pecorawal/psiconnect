@@ -1,0 +1,16 @@
+{% set assunto %}Autorização para o atendimento de {{ menor_primeiro_nome }}{% endset %}
+Olá, {{ responsavel_nome }}.
+
+{{ menor_primeiro_nome }} se cadastrou no PsiConnect, uma plataforma de
+atendimento psicológico on-line, e informou você como responsável legal.
+
+Pela Lei Geral de Proteção de Dados, o atendimento de menores de 18 anos só
+começa com a autorização de um dos pais ou do responsável. Para ler os termos e
+autorizar (ou recusar), acesse em até {{ prazo_dias }} dias:
+
+{{ link }}
+
+Se você não reconhece este pedido, ignore este e-mail: nada será feito sem a
+sua confirmação.
+
+Equipe PsiConnect
